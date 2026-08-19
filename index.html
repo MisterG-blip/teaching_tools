@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gruppen auslosen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<style>
+  :root {
+    --paper: #fffdf7;
+    --grid-line: #cfe0ef;
+    --ink: #26313a;
+    --ink-soft: #5b6b76;
+    --red-pen: #d84a3b;
+    --red-pen-dark: #b93a2d;
+    --pencil-1: #e4572e;
+    --pencil-2: #2d8fd9;
+    --pencil-3: #2f9e5c;
+    --pencil-4: #9b59b6;
+    --pencil-5: #d9a913;
+    --pencil-6: #e0568c;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+    color: var(--ink);
+    background-color: var(--paper);
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 28px 28px;
+    background-attachment: fixed;
+    padding: clamp(20px, 5vw, 56px) 16px 80px;
+  }
+
+  main {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .eyebrow {
+    display: inline-block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--red-pen);
+    background: #fff;
+    border: 1.5px dashed var(--red-pen);
+    border-radius: 999px;
+    padding: 4px 14px;
+    margin-bottom: 14px;
+    transform: rotate(-1deg);
+  }
+
+  h1 {
+    font-family: 'Caveat', cursive;
+    font-weight: 700;
+    font-size: clamp(2.6rem, 7vw, 4rem);
+    line-height: 1;
+    margin: 0 0 10px;
+    color: var(--ink);
+  }
+
+  h1 .underline {
+    position: relative;
+    white-space: nowrap;
+  }
+  h1 .underline svg {
+    position: absolute;
+    left: -2%;
+    bottom: -0.12em;
+    width: 104%;
+    height: 0.3em;
+  }
+
+  header p {
+    margin: 0 auto;
+    max-width: 46ch;
+    color: var(--ink-soft);
+    font-size: 1.02rem;
+    line-height: 1.55;
+  }
+
+  .card {
+    background: #fff;
+    border: 1.5px solid #e4e0d3;
+    border-radius: 16px;
+    padding: clamp(20px, 4vw, 34px);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.02), 0 12px 30px -18px rgba(38,49,58,0.25);
+  }
+
+  .account-card {
+    margin-bottom: 22px;
+  }
+
+  .account-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .account-title {
+    font-family: 'Caveat', cursive;
+    font-size: 1.5rem;
+    margin: 0;
+  }
+
+  .account-status {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+  }
+
+  .auth-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .auth-form input[type="email"],
+  .auth-form input[type="password"] {
+    flex: 1 1 180px;
+    padding: 10px 12px;
+    border: 1.5px solid #d9d4c4;
+    border-radius: 9px;
+    background: #fffefb;
+    font-family: inherit;
+    font-size: 0.94rem;
+    color: var(--ink);
+  }
+  .auth-form input:focus-visible {
+    outline: 2.5px solid var(--red-pen);
+    outline-offset: 2px;
+  }
+
+  .auth-form .ghost-btn,
+  .auth-form .draw-btn-small {
+    flex: 0 0 auto;
+  }
+
+  .draw-btn-small {
+    padding: 10px 16px;
+    background: var(--red-pen);
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  .draw-btn-small:hover { background: var(--red-pen-dark); }
+  .draw-btn-small:focus-visible {
+    outline: 2.5px solid var(--ink);
+    outline-offset: 2px;
+  }
+
+  .auth-message {
+    width: 100%;
+    font-size: 0.85rem;
+    margin-top: 4px;
+    color: var(--red-pen-dark);
+    display: none;
+  }
+  .auth-message.show { display: block; }
+  .auth-message.success { color: var(--pencil-3); }
+
+  .save-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .save-status {
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+  }
+
+  label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.92rem;
+    margin-bottom: 8px;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 160px;
+    resize: vertical;
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    line-height: 1.6;
+    padding: 14px 16px;
+    border: 1.5px solid #d9d4c4;
+    border-radius: 10px;
+    background: #fffefb;
+    color: var(--ink);
+  }
+  textarea:focus-visible {
+    outline: 2.5px solid var(--red-pen);
+    outline-offset: 2px;
+  }
+
+  .hint {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    margin-top: 6px;
+  }
+
+  .config-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-top: 26px;
+    align-items: flex-end;
+  }
+
+  .field-group {
+    flex: 1 1 220px;
+  }
+
+  .mode-toggle {
+    display: flex;
+    gap: 8px;
+    background: #f2efe6;
+    padding: 4px;
+    border-radius: 10px;
+    margin-top: 4px;
+  }
+  .mode-toggle button {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 9px 10px;
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    border-radius: 7px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .mode-toggle button[aria-pressed="true"] {
+    background: #fff;
+    color: var(--ink);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  }
+  .mode-toggle button:focus-visible {
+    outline: 2.5px solid var(--red-pen);
+    outline-offset: 2px;
+  }
+
+  .number-field {
+    display: flex;
+    align-items: center;
+    border: 1.5px solid #d9d4c4;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fffefb;
+    margin-top: 4px;
+  }
+  .number-field button {
+    background: #f2efe6;
+    border: none;
+    width: 40px;
+    height: 42px;
+    font-size: 1.1rem;
+    font-family: inherit;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .number-field button:hover { background: #e9e4d5; }
+  .number-field input {
+    flex: 1;
+    border: none;
+    text-align: center;
+    font-size: 1rem;
+    font-family: inherit;
+    color: var(--ink);
+    background: transparent;
+    padding: 0;
+    -moz-appearance: textfield;
+  }
+  .number-field input::-webkit-outer-spin-button,
+  .number-field input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .number-field input:focus-visible { outline: none; }
+  .number-field:focus-within {
+    outline: 2.5px solid var(--red-pen);
+    outline-offset: 2px;
+  }
+
+  .draw-btn {
+    display: block;
+    width: 100%;
+    margin-top: 28px;
+    padding: 15px 20px;
+    background: var(--red-pen);
+    color: #fff;
+    border: none;
+    border-radius: 11px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+  .draw-btn:hover { background: var(--red-pen-dark); }
+  .draw-btn:active { transform: scale(0.99); }
+  .draw-btn:focus-visible {
+    outline: 2.5px solid var(--ink);
+    outline-offset: 3px;
+  }
+
+  .error {
+    margin-top: 16px;
+    padding: 12px 14px;
+    background: #fdf1ef;
+    border: 1.5px solid #f1c7c0;
+    color: var(--red-pen-dark);
+    border-radius: 9px;
+    font-size: 0.92rem;
+    font-weight: 500;
+    display: none;
+  }
+  .error.show { display: block; }
+
+  #results {
+    margin-top: 40px;
+  }
+
+  .results-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .results-head h2 {
+    font-family: 'Caveat', cursive;
+    font-size: 2rem;
+    margin: 0;
+    color: var(--ink);
+  }
+
+  .actions {
+    display: flex;
+    gap: 10px;
+  }
+  .ghost-btn {
+    background: #fff;
+    border: 1.5px solid #d9d4c4;
+    color: var(--ink);
+    padding: 9px 14px;
+    border-radius: 9px;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 0.86rem;
+    cursor: pointer;
+  }
+  .ghost-btn:hover { background: #f7f4ea; }
+  .ghost-btn:focus-visible {
+    outline: 2.5px solid var(--red-pen);
+    outline-offset: 2px;
+  }
+
+  .groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 18px;
+  }
+
+  .group {
+    border-radius: 14px;
+    padding: 16px 16px 20px;
+    background: #fbfaf5;
+    border: 1.5px solid #e4e0d3;
+  }
+
+  .group-title {
+    font-family: 'Caveat', cursive;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 2.5px dashed currentColor;
+  }
+
+  .tag-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .tag {
+    background: #fff;
+    border: 1.5px solid #e4e0d3;
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 0.96rem;
+    font-weight: 500;
+    color: var(--ink);
+    opacity: 0;
+    transform: translateY(6px) rotate(var(--r, 0deg));
+    animation: dealIn 0.35s ease forwards;
+    animation-delay: var(--delay, 0s);
+  }
+
+  @keyframes dealIn {
+    to { opacity: 1; transform: translateY(0) rotate(var(--r, 0deg)); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tag { animation: none; opacity: 1; transform: none; }
+  }
+
+  footer {
+    text-align: center;
+    margin-top: 48px;
+    color: var(--ink-soft);
+    font-size: 0.85rem;
+  }
+
+  @media (max-width: 480px) {
+    .config-row { flex-direction: column; align-items: stretch; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="eyebrow">Für den Unterricht</span>
+    <h1>Gruppen <span class="underline">auslosen
+      <svg viewBox="0 0 200 20" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M2 14 C 50 20, 150 6, 198 12" stroke="var(--red-pen)" stroke-width="5" fill="none" stroke-linecap="round"/>
+      </svg>
+    </span></h1>
+    <p>Namen eintragen, Anzahl festlegen, auslosen. Fertig sind faire, zufällige Gruppen für die Klasse.</p>
+  </header>
+
+  <section class="card account-card" id="accountCard">
+    <div class="account-row">
+      <p class="account-title">Konto</p>
+      <p class="account-status" id="accountStatus">Nicht angemeldet</p>
+    </div>
+
+    <form class="auth-form" id="authForm">
+      <input type="email" id="authEmail" placeholder="E-Mail" autocomplete="email" required>
+      <input type="password" id="authPassword" placeholder="Passwort" autocomplete="current-password" required minlength="6">
+      <button type="submit" class="draw-btn-small" id="loginBtn">Anmelden</button>
+      <button type="button" class="ghost-btn" id="registerBtn">Konto erstellen</button>
+      <p class="auth-message" id="authMessage"></p>
+    </form>
+
+    <div class="save-row" id="loggedInRow" style="display:none;">
+      <button type="button" class="draw-btn-small" id="saveNamesBtn">Namen speichern</button>
+      <button type="button" class="ghost-btn" id="logoutBtn">Abmelden</button>
+      <span class="save-status" id="saveStatus"></span>
+    </div>
+  </section>
+
+  <section class="card">
+    <label for="names">Namen der Klasse</label>
+    <textarea id="names" placeholder="Ein Name pro Zeile, z. B.&#10;Mia&#10;Ben&#10;Lea&#10;Finn&#10;Emma&#10;Noah"></textarea>
+    <p class="hint" id="countHint">0 Namen erkannt</p>
+
+    <div class="config-row">
+      <div class="field-group">
+        <label id="modeLabel">Einteilung nach</label>
+        <div class="mode-toggle" role="group" aria-labelledby="modeLabel">
+          <button type="button" id="modeGroups" aria-pressed="true">Anzahl Gruppen</button>
+          <button type="button" id="modeSize" aria-pressed="false">Personen pro Gruppe</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label for="numberInput" id="numberLabel">Anzahl Gruppen</label>
+        <div class="number-field">
+          <button type="button" id="decrease" aria-label="Verringern">−</button>
+          <input type="number" id="numberInput" value="4" min="1" inputmode="numeric">
+          <button type="button" id="increase" aria-label="Erhöhen">+</button>
+        </div>
+      </div>
+    </div>
+
+    <p class="error" id="errorBox" role="alert"></p>
+
+    <button type="button" class="draw-btn" id="drawBtn">Gruppen auslosen</button>
+  </section>
+
+  <section id="results" aria-live="polite"></section>
+
+  <footer>Jede Auslosung mischt neu &mdash; für eine andere Aufteilung einfach nochmal klicken.</footer>
+</main>
+
+<script>
+(function () {
+  const namesEl = document.getElementById('names');
+  const countHint = document.getElementById('countHint');
+  const modeGroupsBtn = document.getElementById('modeGroups');
+  const modeSizeBtn = document.getElementById('modeSize');
+  const numberInput = document.getElementById('numberInput');
+  const numberLabel = document.getElementById('numberLabel');
+  const decreaseBtn = document.getElementById('decrease');
+  const increaseBtn = document.getElementById('increase');
+  const drawBtn = document.getElementById('drawBtn');
+  const errorBox = document.getElementById('errorBox');
+  const resultsEl = document.getElementById('results');
+
+  const pencilColors = ['var(--pencil-1)', 'var(--pencil-2)', 'var(--pencil-3)', 'var(--pencil-4)', 'var(--pencil-5)', 'var(--pencil-6)'];
+  let mode = 'groups';
+  let lastGroups = null;
+
+  function getNames() {
+    return namesEl.value
+      .split('\n')
+      .map(n => n.trim())
+      .filter(n => n.length > 0);
+  }
+
+  namesEl.addEventListener('input', () => {
+    const n = getNames().length;
+    countHint.textContent = n === 1 ? '1 Name erkannt' : n + ' Namen erkannt';
+  });
+
+  function setMode(newMode) {
+    mode = newMode;
+    modeGroupsBtn.setAttribute('aria-pressed', String(mode === 'groups'));
+    modeSizeBtn.setAttribute('aria-pressed', String(mode === 'size'));
+    numberLabel.textContent = mode === 'groups' ? 'Anzahl Gruppen' : 'Personen pro Gruppe';
+  }
+  modeGroupsBtn.addEventListener('click', () => setMode('groups'));
+  modeSizeBtn.addEventListener('click', () => setMode('size'));
+
+  decreaseBtn.addEventListener('click', () => {
+    numberInput.value = Math.max(1, parseInt(numberInput.value || '1', 10) - 1);
+  });
+  increaseBtn.addEventListener('click', () => {
+    numberInput.value = parseInt(numberInput.value || '1', 10) + 1;
+  });
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function showError(msg) {
+    errorBox.textContent = msg;
+    errorBox.classList.add('show');
+  }
+  function clearError() {
+    errorBox.classList.remove('show');
+    errorBox.textContent = '';
+  }
+
+  function buildGroups(names, count) {
+    const shuffled = shuffle(names);
+    const groups = Array.from({ length: count }, () => []);
+    shuffled.forEach((name, i) => {
+      groups[i % count].push(name);
+    });
+    return groups;
+  }
+
+  function render(groups) {
+    lastGroups = groups;
+    resultsEl.innerHTML = '';
+
+    const head = document.createElement('div');
+    head.className = 'results-head';
+    head.innerHTML = `
+      <h2>${groups.length} Gruppen ausgelost</h2>
+      <div class="actions">
+        <button type="button" class="ghost-btn" id="copyBtn">Ergebnis kopieren</button>
+        <button type="button" class="ghost-btn" id="reshuffleBtn">Nochmal auslosen</button>
+      </div>
+    `;
+    resultsEl.appendChild(head);
+
+    const grid = document.createElement('div');
+    grid.className = 'groups';
+
+    groups.forEach((members, gi) => {
+      const color = pencilColors[gi % pencilColors.length];
+      const groupEl = document.createElement('div');
+      groupEl.className = 'group';
+      groupEl.style.color = color;
+
+      const title = document.createElement('p');
+      title.className = 'group-title';
+      title.textContent = 'Gruppe ' + (gi + 1);
+      groupEl.appendChild(title);
+
+      const list = document.createElement('ul');
+      list.className = 'tag-list';
+
+      members.forEach((name, mi) => {
+        const li = document.createElement('li');
+        li.className = 'tag';
+        li.textContent = name;
+        li.style.setProperty('--delay', (gi * 0.05 + mi * 0.06) + 's');
+        li.style.setProperty('--r', (Math.random() * 2 - 1).toFixed(2) + 'deg');
+        li.style.color = 'var(--ink)';
+        list.appendChild(li);
+      });
+
+      groupEl.appendChild(list);
+      grid.appendChild(groupEl);
+    });
+
+    resultsEl.appendChild(grid);
+
+    document.getElementById('reshuffleBtn').addEventListener('click', runDraw);
+    document.getElementById('copyBtn').addEventListener('click', copyResults);
+  }
+
+  function copyResults() {
+    if (!lastGroups) return;
+    const text = lastGroups
+      .map((members, i) => 'Gruppe ' + (i + 1) + ': ' + members.join(', '))
+      .join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copyBtn');
+      const original = btn.textContent;
+      btn.textContent = 'Kopiert';
+      setTimeout(() => { btn.textContent = original; }, 1500);
+    });
+  }
+
+  function runDraw() {
+    clearError();
+    const names = getNames();
+    const n = parseInt(numberInput.value, 10);
+
+    if (names.length < 2) {
+      showError('Mindestens zwei Namen eintragen, um Gruppen zu bilden.');
+      return;
+    }
+    if (!n || n < 1) {
+      showError('Bitte eine Zahl größer als 0 eingeben.');
+      return;
+    }
+
+    let groupCount;
+    if (mode === 'groups') {
+      if (n > names.length) {
+        showError('Es gibt weniger Namen als gewünschte Gruppen. Zahl verringern oder mehr Namen eintragen.');
+        return;
+      }
+      groupCount = n;
+    } else {
+      groupCount = Math.max(1, Math.ceil(names.length / n));
+    }
+
+    const groups = buildGroups(names, groupCount);
+    render(groups);
+    resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  drawBtn.addEventListener('click', runDraw);
+})();
+</script>
+
+<script>
+// ---------------------------------------------------------------
+// FIREBASE-KONFIGURATION
+// Trage hier die Werte aus deiner Firebase-Konsole ein:
+// Projekteinstellungen -> Allgemein -> "Meine Apps" -> Web-App -> SDK-Konfiguration
+// ---------------------------------------------------------------
+const firebaseConfig = {
+  apiKey: "DEIN_API_KEY",
+  authDomain: "DEIN_PROJEKT.firebaseapp.com",
+  projectId: "DEIN_PROJEKT",
+  storageBucket: "DEIN_PROJEKT.appspot.com",
+  messagingSenderId: "DEINE_SENDER_ID",
+  appId: "DEINE_APP_ID"
+};
+
+(function () {
+  if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "DEIN_API_KEY") {
+    document.getElementById('accountStatus').textContent = 'Firebase noch nicht konfiguriert';
+    document.getElementById('authForm').style.opacity = '0.5';
+    document.getElementById('authForm').style.pointerEvents = 'none';
+    return;
+  }
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  const accountStatus = document.getElementById('accountStatus');
+  const authForm = document.getElementById('authForm');
+  const authEmail = document.getElementById('authEmail');
+  const authPassword = document.getElementById('authPassword');
+  const authMessage = document.getElementById('authMessage');
+  const loginBtn = document.getElementById('loginBtn');
+  const registerBtn = document.getElementById('registerBtn');
+  const loggedInRow = document.getElementById('loggedInRow');
+  const saveNamesBtn = document.getElementById('saveNamesBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const saveStatus = document.getElementById('saveStatus');
+  const namesEl = document.getElementById('names');
+
+  function showAuthMessage(msg, success) {
+    authMessage.textContent = msg;
+    authMessage.className = 'auth-message show' + (success ? ' success' : '');
+  }
+  function clearAuthMessage() {
+    authMessage.className = 'auth-message';
+    authMessage.textContent = '';
+  }
+
+  function germanAuthError(err) {
+    const map = {
+      'auth/email-already-in-use': 'Für diese E-Mail existiert bereits ein Konto. Einfach anmelden.',
+      'auth/invalid-email': 'Diese E-Mail-Adresse ist ungültig.',
+      'auth/weak-password': 'Das Passwort muss mindestens 6 Zeichen haben.',
+      'auth/wrong-password': 'Passwort ist falsch.',
+      'auth/user-not-found': 'Zu dieser E-Mail existiert kein Konto.',
+      'auth/invalid-credential': 'E-Mail oder Passwort ist falsch.',
+      'auth/too-many-requests': 'Zu viele Versuche. Kurz warten und nochmal probieren.'
+    };
+    return map[err.code] || 'Etwas ist schiefgelaufen. Nochmal versuchen.';
+  }
+
+  async function loadNames(uid) {
+    try {
+      const doc = await db.collection('klassenlisten').doc(uid).get();
+      if (doc.exists && typeof doc.data().names === 'string') {
+        namesEl.value = doc.data().names;
+        namesEl.dispatchEvent(new Event('input'));
+      }
+    } catch (e) {
+      saveStatus.textContent = 'Namen konnten nicht geladen werden.';
+    }
+  }
+
+  async function saveNames(uid) {
+    saveStatus.textContent = 'Speichert…';
+    try {
+      await db.collection('klassenlisten').doc(uid).set({
+        names: namesEl.value,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      saveStatus.textContent = 'Gespeichert.';
+      setTimeout(() => { saveStatus.textContent = ''; }, 2000);
+    } catch (e) {
+      saveStatus.textContent = 'Speichern fehlgeschlagen.';
+    }
+  }
+
+  authForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    clearAuthMessage();
+    auth.signInWithEmailAndPassword(authEmail.value, authPassword.value)
+      .catch(err => showAuthMessage(germanAuthError(err), false));
+  });
+
+  registerBtn.addEventListener('click', () => {
+    clearAuthMessage();
+    if (!authEmail.value || authPassword.value.length < 6) {
+      showAuthMessage('E-Mail eintragen und Passwort mit mindestens 6 Zeichen wählen.', false);
+      return;
+    }
+    auth.createUserWithEmailAndPassword(authEmail.value, authPassword.value)
+      .then(() => showAuthMessage('Konto erstellt und angemeldet.', true))
+      .catch(err => showAuthMessage(germanAuthError(err), false));
+  });
+
+  logoutBtn.addEventListener('click', () => {
+    auth.signOut();
+  });
+
+  saveNamesBtn.addEventListener('click', () => {
+    const user = auth.currentUser;
+    if (user) saveNames(user.uid);
+  });
+
+  auth.onAuthStateChanged((user) => {
+    if (user) {
+      accountStatus.textContent = 'Angemeldet als ' + user.email;
+      authForm.style.display = 'none';
+      loggedInRow.style.display = 'flex';
+      loadNames(user.uid);
+    } else {
+      accountStatus.textContent = 'Nicht angemeldet';
+      authForm.style.display = 'flex';
+      loggedInRow.style.display = 'none';
+    }
+  });
+})();
+</script>
+</body>
+</html>
