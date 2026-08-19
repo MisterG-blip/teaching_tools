@@ -7,9 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <style>
   :root {
     --paper: #fffdf7;
@@ -690,134 +687,147 @@
 })();
 </script>
 
-<script>
+<script type="module">
 // ---------------------------------------------------------------
-// FIREBASE-KONFIGURATION
-// Trage hier die Werte aus deiner Firebase-Konsole ein:
-// Projekteinstellungen -> Allgemein -> "Meine Apps" -> Web-App -> SDK-Konfiguration
+// FIREBASE-KONFIGURATION (Realtime Database, gleiches Projekt wie
+// der Highscore-Speicher). Die Namenslisten liegen unter dem
+// eigenen Zweig "klassenlisten/{uid}" und kollidieren nicht mit
+// "monthly_highscores" oder "hall_of_fame".
 // ---------------------------------------------------------------
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js';
+import {
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  onAuthStateChanged, signOut
+} from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js';
+import {
+  getDatabase, ref, get, set
+} from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js';
+
 const firebaseConfig = {
-  apiKey: "DEIN_API_KEY",
-  authDomain: "DEIN_PROJEKT.firebaseapp.com",
-  projectId: "DEIN_PROJEKT",
-  storageBucket: "DEIN_PROJEKT.appspot.com",
-  messagingSenderId: "DEINE_SENDER_ID",
-  appId: "DEINE_APP_ID"
+  apiKey: "AIzaSyBakpiJeeoG2_OpDvQBhdjBy8w8VSAQHnY",
+  authDomain: "teachingtools-6266c.firebaseapp.com",
+  projectId: "teachingtools-6266c",
+  storageBucket: "teachingtools-6266c.firebasestorage.app",
+  messagingSenderId: "631340621157",
+  appId: "1:631340621157:web:96f5d6a0f93de99add158c",
+  measurementId: "G-2HCD49JM4Y"
 };
 
-(function () {
-  if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "DEIN_API_KEY") {
-    document.getElementById('accountStatus').textContent = 'Firebase noch nicht konfiguriert';
-    document.getElementById('authForm').style.opacity = '0.5';
-    document.getElementById('authForm').style.pointerEvents = 'none';
+const accountStatus = document.getElementById('accountStatus');
+const authForm = document.getElementById('authForm');
+const authEmail = document.getElementById('authEmail');
+const authPassword = document.getElementById('authPassword');
+const authMessage = document.getElementById('authMessage');
+const registerBtn = document.getElementById('registerBtn');
+const loggedInRow = document.getElementById('loggedInRow');
+const saveNamesBtn = document.getElementById('saveNamesBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+const saveStatus = document.getElementById('saveStatus');
+const namesEl = document.getElementById('names');
+
+let auth, db;
+if (!firebaseConfig.apiKey || firebaseConfig.apiKey === 'DEIN_API_KEY') {
+  accountStatus.textContent = 'Firebase noch nicht konfiguriert';
+  authForm.style.opacity = '0.5';
+  authForm.style.pointerEvents = 'none';
+} else {
+  try {
+    const app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getDatabase(app);
+  } catch (err) {
+    accountStatus.textContent = 'Firebase-Verbindung fehlgeschlagen';
+    authForm.style.opacity = '0.5';
+    authForm.style.pointerEvents = 'none';
+  }
+}
+
+function showAuthMessage(msg, success) {
+  authMessage.textContent = msg;
+  authMessage.className = 'auth-message show' + (success ? ' success' : '');
+}
+function clearAuthMessage() {
+  authMessage.className = 'auth-message';
+  authMessage.textContent = '';
+}
+
+function germanAuthError(err) {
+  const map = {
+    'auth/email-already-in-use': 'Für diese E-Mail existiert bereits ein Konto. Einfach anmelden.',
+    'auth/invalid-email': 'Diese E-Mail-Adresse ist ungültig.',
+    'auth/weak-password': 'Das Passwort muss mindestens 6 Zeichen haben.',
+    'auth/wrong-password': 'Passwort ist falsch.',
+    'auth/user-not-found': 'Zu dieser E-Mail existiert kein Konto.',
+    'auth/invalid-credential': 'E-Mail oder Passwort ist falsch.',
+    'auth/too-many-requests': 'Zu viele Versuche. Kurz warten und nochmal probieren.'
+  };
+  return map[err.code] || 'Etwas ist schiefgelaufen. Nochmal versuchen.';
+}
+
+async function loadNames(uid) {
+  try {
+    const snapshot = await get(ref(db, 'klassenlisten/' + uid));
+    if (snapshot.exists() && typeof snapshot.val().names === 'string') {
+      namesEl.value = snapshot.val().names;
+      namesEl.dispatchEvent(new Event('input'));
+    }
+  } catch (e) {
+    saveStatus.textContent = 'Namen konnten nicht geladen werden.';
+  }
+}
+
+async function saveNames(uid) {
+  saveStatus.textContent = 'Speichert…';
+  try {
+    await set(ref(db, 'klassenlisten/' + uid), {
+      names: namesEl.value,
+      updatedAt: Date.now()
+    });
+    saveStatus.textContent = 'Gespeichert.';
+    setTimeout(() => { saveStatus.textContent = ''; }, 2000);
+  } catch (e) {
+    saveStatus.textContent = 'Speichern fehlgeschlagen.';
+  }
+}
+
+authForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  clearAuthMessage();
+  signInWithEmailAndPassword(auth, authEmail.value, authPassword.value)
+    .catch(err => showAuthMessage(germanAuthError(err), false));
+});
+
+registerBtn.addEventListener('click', () => {
+  clearAuthMessage();
+  if (!authEmail.value || authPassword.value.length < 6) {
+    showAuthMessage('E-Mail eintragen und Passwort mit mindestens 6 Zeichen wählen.', false);
     return;
   }
+  createUserWithEmailAndPassword(auth, authEmail.value, authPassword.value)
+    .then(() => showAuthMessage('Konto erstellt und angemeldet.', true))
+    .catch(err => showAuthMessage(germanAuthError(err), false));
+});
 
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.firestore();
+logoutBtn.addEventListener('click', () => {
+  signOut(auth);
+});
 
-  const accountStatus = document.getElementById('accountStatus');
-  const authForm = document.getElementById('authForm');
-  const authEmail = document.getElementById('authEmail');
-  const authPassword = document.getElementById('authPassword');
-  const authMessage = document.getElementById('authMessage');
-  const loginBtn = document.getElementById('loginBtn');
-  const registerBtn = document.getElementById('registerBtn');
-  const loggedInRow = document.getElementById('loggedInRow');
-  const saveNamesBtn = document.getElementById('saveNamesBtn');
-  const logoutBtn = document.getElementById('logoutBtn');
-  const saveStatus = document.getElementById('saveStatus');
-  const namesEl = document.getElementById('names');
+saveNamesBtn.addEventListener('click', () => {
+  if (auth.currentUser) saveNames(auth.currentUser.uid);
+});
 
-  function showAuthMessage(msg, success) {
-    authMessage.textContent = msg;
-    authMessage.className = 'auth-message show' + (success ? ' success' : '');
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    accountStatus.textContent = 'Angemeldet als ' + user.email;
+    authForm.style.display = 'none';
+    loggedInRow.style.display = 'flex';
+    loadNames(user.uid);
+  } else {
+    accountStatus.textContent = 'Nicht angemeldet';
+    authForm.style.display = 'flex';
+    loggedInRow.style.display = 'none';
   }
-  function clearAuthMessage() {
-    authMessage.className = 'auth-message';
-    authMessage.textContent = '';
-  }
-
-  function germanAuthError(err) {
-    const map = {
-      'auth/email-already-in-use': 'Für diese E-Mail existiert bereits ein Konto. Einfach anmelden.',
-      'auth/invalid-email': 'Diese E-Mail-Adresse ist ungültig.',
-      'auth/weak-password': 'Das Passwort muss mindestens 6 Zeichen haben.',
-      'auth/wrong-password': 'Passwort ist falsch.',
-      'auth/user-not-found': 'Zu dieser E-Mail existiert kein Konto.',
-      'auth/invalid-credential': 'E-Mail oder Passwort ist falsch.',
-      'auth/too-many-requests': 'Zu viele Versuche. Kurz warten und nochmal probieren.'
-    };
-    return map[err.code] || 'Etwas ist schiefgelaufen. Nochmal versuchen.';
-  }
-
-  async function loadNames(uid) {
-    try {
-      const doc = await db.collection('klassenlisten').doc(uid).get();
-      if (doc.exists && typeof doc.data().names === 'string') {
-        namesEl.value = doc.data().names;
-        namesEl.dispatchEvent(new Event('input'));
-      }
-    } catch (e) {
-      saveStatus.textContent = 'Namen konnten nicht geladen werden.';
-    }
-  }
-
-  async function saveNames(uid) {
-    saveStatus.textContent = 'Speichert…';
-    try {
-      await db.collection('klassenlisten').doc(uid).set({
-        names: namesEl.value,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      saveStatus.textContent = 'Gespeichert.';
-      setTimeout(() => { saveStatus.textContent = ''; }, 2000);
-    } catch (e) {
-      saveStatus.textContent = 'Speichern fehlgeschlagen.';
-    }
-  }
-
-  authForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    clearAuthMessage();
-    auth.signInWithEmailAndPassword(authEmail.value, authPassword.value)
-      .catch(err => showAuthMessage(germanAuthError(err), false));
-  });
-
-  registerBtn.addEventListener('click', () => {
-    clearAuthMessage();
-    if (!authEmail.value || authPassword.value.length < 6) {
-      showAuthMessage('E-Mail eintragen und Passwort mit mindestens 6 Zeichen wählen.', false);
-      return;
-    }
-    auth.createUserWithEmailAndPassword(authEmail.value, authPassword.value)
-      .then(() => showAuthMessage('Konto erstellt und angemeldet.', true))
-      .catch(err => showAuthMessage(germanAuthError(err), false));
-  });
-
-  logoutBtn.addEventListener('click', () => {
-    auth.signOut();
-  });
-
-  saveNamesBtn.addEventListener('click', () => {
-    const user = auth.currentUser;
-    if (user) saveNames(user.uid);
-  });
-
-  auth.onAuthStateChanged((user) => {
-    if (user) {
-      accountStatus.textContent = 'Angemeldet als ' + user.email;
-      authForm.style.display = 'none';
-      loggedInRow.style.display = 'flex';
-      loadNames(user.uid);
-    } else {
-      accountStatus.textContent = 'Nicht angemeldet';
-      authForm.style.display = 'flex';
-      loggedInRow.style.display = 'none';
-    }
-  });
-})();
+});
 </script>
 </body>
 </html>
