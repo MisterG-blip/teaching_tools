@@ -182,6 +182,17 @@
   .auth-message.show { display: block; }
   .auth-message.success { color: var(--pencil-3); }
 
+  .firebase-note {
+    width: 100%;
+    font-size: 0.76rem;
+    color: var(--ink-soft);
+    margin: 6px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .firebase-note strong { color: var(--ink); }
+
   /* ---------- App shell: sidebar + workspace ---------- */
   .app-shell {
     display: flex;
@@ -287,6 +298,43 @@
     color: var(--ink-soft);
     line-height: 1.5;
     margin: 6px 2px 0;
+  }
+
+  .join-group-block {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1.5px dashed var(--card-border);
+  }
+  .join-form {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .join-form input {
+    flex: 1;
+    min-width: 0;
+    font-family: inherit;
+    font-size: 0.85rem;
+    color: var(--ink);
+    background: var(--field-bg);
+    border: 1.5px solid var(--field-border);
+    border-radius: 8px;
+    padding: 8px 9px;
+    text-transform: uppercase;
+  }
+  .join-form input:focus-visible {
+    outline: 2.5px solid var(--red-pen);
+    outline-offset: 1px;
+  }
+  .join-form .btn-ghost {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+  .join-message {
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    margin: 6px 2px 0;
+    min-height: 1em;
   }
 
   /* ---------- Workspace ---------- */
@@ -535,6 +583,264 @@
     font-size: 0.82rem;
   }
   footer.app-footer strong { color: var(--red-pen); }
+  .footer-nav {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .footer-nav a {
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-weight: 700;
+  }
+  .footer-nav a:hover { color: var(--red-pen); text-decoration: underline; }
+  .footer-nav a:focus-visible {
+    outline: 2.5px solid var(--red-pen);
+    outline-offset: 2px;
+  }
+
+  .call-workspace { margin-top: 0; }
+
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--ink);
+    cursor: pointer;
+    margin-top: 4px;
+    padding: 11px 2px;
+  }
+  .checkbox-row input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--red-pen);
+    cursor: pointer;
+  }
+
+  .slot-window {
+    margin-top: 20px;
+    background: var(--ink);
+    border: 3px solid var(--red-pen);
+    border-radius: 14px;
+    padding: 30px 20px;
+    text-align: center;
+    overflow: hidden;
+    box-shadow: inset 0 3px 12px rgba(0,0,0,0.45);
+  }
+  .slot-window span {
+    font-family: 'Caveat', cursive;
+    font-weight: 700;
+    font-size: clamp(1.8rem, 5vw, 2.6rem);
+    color: #fffdf7;
+    display: inline-block;
+    word-break: break-word;
+  }
+  .slot-window.landed span {
+    color: var(--pencil-5);
+    text-shadow: 0 0 18px rgba(217,169,19,0.5);
+  }
+
+  .call-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+  }
+  .call-actions .draw-btn {
+    flex: 1 1 200px;
+    margin-top: 0;
+  }
+  .call-actions .btn-ghost { flex: 0 0 auto; }
+
+  .called-chips {
+    list-style: none;
+    margin: 16px 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .called-chips li {
+    background: var(--chip-bg);
+    border: 1.5px solid var(--card-border);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  @media (max-width: 760px) {
+    .sidebar-spacer-desktop { display: none; }
+  }
+
+  /* ---------- Sitzplan ---------- */
+  .layout-toggle { max-width: 480px; }
+
+  .rules-panel {
+    margin-top: 20px;
+    border: 1.5px solid var(--card-border);
+    border-radius: 12px;
+    padding: 4px 16px;
+    background: #fbfaf5;
+  }
+  .rules-panel summary {
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.92rem;
+    padding: 12px 0;
+    color: var(--ink);
+  }
+  .rules-block { padding: 6px 0 16px; }
+  .rules-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--ink-soft);
+    margin: 4px 0 8px;
+  }
+  .chip-toggle-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .chip-toggle {
+    border: 1.5px solid var(--field-border);
+    background: #fff;
+    border-radius: 999px;
+    padding: 5px 12px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .chip-toggle.active {
+    background: #fdf1ef;
+    border-color: var(--red-pen);
+    color: var(--red-pen-dark);
+  }
+
+  .rule-builder {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .rule-builder select {
+    font-family: inherit;
+    font-size: 0.86rem;
+    color: var(--ink);
+    background: var(--field-bg);
+    border: 1.5px solid var(--field-border);
+    border-radius: 8px;
+    padding: 7px 8px;
+    min-width: 130px;
+  }
+  .rule-list {
+    list-style: none;
+    margin: 10px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .rule-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+    border: 1.5px solid var(--card-border);
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 0.85rem;
+  }
+  .rule-list button {
+    border: none;
+    background: transparent;
+    color: var(--ink-soft);
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  .rule-list button:hover { color: var(--red-pen-dark); }
+
+  .seating-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+  }
+  .seating-actions .draw-btn { flex: 1 1 220px; margin-top: 0; }
+  .seating-actions .btn-ghost { flex: 0 0 auto; }
+
+  .seating-room {
+    margin-top: 20px;
+    background: #fbfaf5;
+    border: 1.5px solid var(--card-border);
+    border-radius: 14px;
+    padding: 20px;
+  }
+  .board-bar {
+    text-align: center;
+    background: var(--ink);
+    color: #fffdf7;
+    font-family: 'Caveat', cursive;
+    font-size: 1.2rem;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 6px 0;
+    margin-bottom: 20px;
+    letter-spacing: 0.05em;
+  }
+  .desk-grid {
+    display: grid;
+    gap: 10px;
+    justify-content: center;
+  }
+  .desk {
+    display: flex;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1.5px solid var(--card-border);
+    background: #fff;
+    min-width: 110px;
+  }
+  .desk.conflict { border-color: var(--red-pen); box-shadow: 0 0 0 2px rgba(216,74,59,0.25); }
+  .seat {
+    flex: 1;
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--ink);
+    padding: 6px 4px;
+    cursor: pointer;
+    border-right: 1.5px dashed var(--card-border);
+    word-break: break-word;
+  }
+  .seat:last-child { border-right: none; }
+  .seat.empty { color: var(--ink-soft); font-weight: 400; font-style: italic; cursor: default; }
+  .seat.front-marked { background: #fdf6e0; }
+  .seat.selected { background: var(--red-pen); color: #fff; }
+
+  .print-only { display: none; }
+  @media print {
+    body.print-mode > *:not(#printRoot) { display: none !important; }
+    body.print-mode #printRoot { display: block !important; }
+    body.print-mode { background: #fff; }
+    #printRoot h2 { font-family:'Caveat',cursive; font-size: 1.8rem; margin: 0 0 4px; }
+    #printRoot .print-meta { font-size: 0.85rem; color: #555; margin-bottom: 16px; }
+    @page { size: landscape; margin: 14mm; }
+  }
 
   @media (max-width: 760px) {
     .app-shell { flex-direction: column; }
@@ -564,6 +870,7 @@
       <button type="submit" class="btn btn-primary" id="loginBtn">Anmelden</button>
       <button type="button" class="btn btn-ghost" id="registerBtn">Konto erstellen</button>
       <span class="auth-message" id="authMessage"></span>
+      <p class="firebase-note">🔒 Anmeldung &amp; Gruppen werden sicher bei <strong>Google Firebase</strong> gespeichert.</p>
     </form>
     <div id="loggedInRow" style="display:none; gap:8px; align-items:center;">
       <button type="button" class="btn btn-ghost" id="logoutBtn">Abmelden</button>
@@ -579,6 +886,15 @@
     </div>
     <ul class="group-list" id="groupList"></ul>
     <p class="sidebar-hint" id="sidebarHint">Melde dich an, um Gruppen zu speichern und von jedem Gerät abzurufen.</p>
+
+    <div class="join-group-block">
+      <p class="rules-label">Gruppe beitreten</p>
+      <div class="join-form">
+        <input type="text" id="joinCodeInput" placeholder="Code, z. B. K7M2QX" maxlength="8">
+        <button type="button" class="btn btn-ghost" id="joinGroupBtn">Beitreten</button>
+      </div>
+      <p class="join-message" id="joinMessage"></p>
+    </div>
   </aside>
 
   <main class="workspace">
@@ -618,7 +934,106 @@
   </main>
 </div>
 
+<div class="app-shell" style="margin-top: -10px;">
+  <div style="flex: 0 0 250px;" class="sidebar-spacer-desktop"></div>
+  <section class="workspace call-workspace">
+    <div class="workspace-head">
+      <h2>🎰 Zufällig aufrufen</h2>
+    </div>
+    <p class="workspace-sub">Ruft eine oder mehrere Personen aus der Namensliste oben zufällig auf – ideal für die mündliche Abfrage.</p>
+
+    <div class="config-row">
+      <div class="field-group">
+        <label class="field-label" for="callCount">Anzahl aufrufen</label>
+        <div class="number-field">
+          <button type="button" id="callDecrease" aria-label="Verringern">−</button>
+          <input type="number" id="callCount" value="1" min="1" inputmode="numeric">
+          <button type="button" id="callIncrease" aria-label="Erhöhen">+</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Fairness</label>
+        <label class="checkbox-row">
+          <input type="checkbox" id="noRepeat" checked>
+          Nicht doppelt aufrufen, bis alle dran waren
+        </label>
+      </div>
+    </div>
+
+    <div class="slot-window" id="slotWindow">
+      <span id="slotDisplay">–</span>
+    </div>
+
+    <p class="hint" id="calledHint">Noch niemand aufgerufen.</p>
+
+    <div class="call-actions">
+      <button type="button" class="draw-btn" id="callBtn">Jetzt aufrufen</button>
+      <button type="button" class="btn btn-ghost" id="resetCalledBtn">Liste zurücksetzen</button>
+    </div>
+
+    <ul class="called-chips" id="calledChips"></ul>
+  </section>
+</div>
+
+<div class="app-shell">
+  <div style="flex: 0 0 250px;" class="sidebar-spacer-desktop"></div>
+  <section class="workspace seating-workspace" id="seatingWorkspace">
+    <div class="workspace-head">
+      <h2>🪑 Sitzplan</h2>
+      <span class="save-indicator" id="seatingSaveIndicator"></span>
+    </div>
+    <p class="workspace-sub">Raster wählen, Los klicken, dann bei Bedarf zwei Plätze antippen, um zu tauschen.</p>
+
+    <div class="mode-toggle layout-toggle" role="group" aria-label="Sitzplan-Raster">
+      <button type="button" class="layout-btn" id="layoutReihen" aria-pressed="true">Reihen</button>
+      <button type="button" class="layout-btn" id="layoutUform" aria-pressed="false">U-Form</button>
+      <button type="button" class="layout-btn" id="layoutGruppen" aria-pressed="false">Gruppentische</button>
+    </div>
+
+    <details class="rules-panel" id="rulesPanel">
+      <summary>Regeln verwalten</summary>
+
+      <div class="rules-block">
+        <p class="rules-label">Sitzt vorne (z. B. wegen Sehschwäche)</p>
+        <ul class="chip-toggle-list" id="frontRowList"></ul>
+      </div>
+
+      <div class="rules-block">
+        <p class="rules-label">Nicht am selben Tisch</p>
+        <div class="rule-builder">
+          <select id="ruleNameA"></select>
+          <span>↔</span>
+          <select id="ruleNameB"></select>
+          <button type="button" class="btn btn-ghost" id="addRuleBtn">Hinzufügen</button>
+        </div>
+        <ul class="rule-list" id="ruleList"></ul>
+      </div>
+    </details>
+
+    <div class="seating-actions">
+      <button type="button" class="draw-btn" id="proposeSeatingBtn">Sitzplan vorschlagen</button>
+      <button type="button" class="btn btn-ghost" id="exportPdfBtn">Als PDF exportieren</button>
+    </div>
+
+    <p class="hint" id="seatingHint">Noch kein Sitzplan erstellt.</p>
+
+    <div class="seating-room" id="seatingRoom">
+      <div class="board-bar">Tafel</div>
+      <div class="desk-grid" id="deskGrid"></div>
+    </div>
+  </section>
+</div>
+
+<div id="printRoot" class="print-only"></div>
+
+
 <footer class="app-footer">
+  <nav class="footer-nav">
+    <a href="https://ichwillzocken.com/support">Support</a>
+    <a href="https://ichwillzocken.com/dev">Developer</a>
+    <a href="https://ichwillzocken.com/docs/Datenschutz">Datenschutz</a>
+    <a href="https://ichwillzocken.com/docs/Impressum">Impressum</a>
+  </nav>
   <p>Teil des <strong>Mister G</strong> Portals · TeacherSupport</p>
   <p>© 2026 Mister G</p>
 </footer>
@@ -630,7 +1045,7 @@ import {
   onAuthStateChanged, signOut
 } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js';
 import {
-  getDatabase, ref, onValue, push, set, remove, off
+  getDatabase, ref, onValue, push, set, remove, off, get
 } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js';
 
 // ---------------------------------------------------------------
@@ -645,7 +1060,8 @@ const firebaseConfig = {
   projectId: "teachingtools-6266c",
   storageBucket: "teachingtools-6266c.firebasestorage.app",
   messagingSenderId: "631340621157",
-  appId: "1:631340621157:web:96f5d6a0f93de99add158c",  
+  appId: "1:631340621157:web:96f5d6a0f93de99add158c",
+  measurementId: "G-2HCD49JM4Y"
 };
 
 // ================= DOM refs =================
@@ -700,7 +1116,6 @@ if (!firebaseConfig.apiKey || firebaseConfig.apiKey === 'DEIN_API_KEY') {
 // ================= State =================
 let groups = {};          // { groupId: { name, names, updatedAt } }
 let activeGroupId = null;
-let groupsUnsub = null;
 let saveTimer = null;
 
 function germanAuthError(err) {
@@ -738,16 +1153,28 @@ function renderGroupList() {
     sidebarHint.style.display = 'none';
   }
 
+  const myUid = auth && auth.currentUser ? auth.currentUser.uid : null;
+
   ids.forEach(id => {
     const g = groups[id];
+    const memberCount = g.members ? Object.keys(g.members).length : 1;
+    const isOwner = myUid && g.ownerUid === myUid;
+
     const li = document.createElement('li');
     li.className = 'group-item' + (id === activeGroupId ? ' active' : '');
 
     const selectBtn = document.createElement('button');
     selectBtn.type = 'button';
     selectBtn.className = 'group-select';
-    selectBtn.textContent = g.name || 'Ohne Namen';
+    selectBtn.textContent = (g.name || 'Ohne Namen') + (memberCount > 1 ? ' 👥' + memberCount : '');
     selectBtn.addEventListener('click', () => selectGroup(id));
+
+    const shareBtn = document.createElement('button');
+    shareBtn.type = 'button';
+    shareBtn.className = 'mini-btn';
+    shareBtn.title = 'Mit Kolleg:in teilen';
+    shareBtn.textContent = '👥';
+    shareBtn.addEventListener('click', () => shareGroup(id));
 
     const renameBtn = document.createElement('button');
     renameBtn.type = 'button';
@@ -759,11 +1186,11 @@ function renderGroupList() {
     const deleteBtn = document.createElement('button');
     deleteBtn.type = 'button';
     deleteBtn.className = 'mini-btn';
-    deleteBtn.title = 'Löschen';
-    deleteBtn.textContent = '🗑';
-    deleteBtn.addEventListener('click', () => deleteGroup(id));
+    deleteBtn.title = isOwner ? 'Für alle löschen' : 'Gruppe verlassen';
+    deleteBtn.textContent = isOwner ? '🗑' : '🚪';
+    deleteBtn.addEventListener('click', () => deleteOrLeaveGroup(id, isOwner));
 
-    li.append(selectBtn, renameBtn, deleteBtn);
+    li.append(selectBtn, shareBtn, renameBtn, deleteBtn);
     groupList.appendChild(li);
   });
 }
@@ -776,7 +1203,16 @@ function selectGroup(id) {
   namesEl.value = (g && g.names) || '';
   namesEl.dispatchEvent(new Event('input'));
   resultsEl.innerHTML = '';
+  if (typeof resetCalled === 'function') resetCalled();
+  if (typeof loadSeatingFromGroup === 'function') loadSeatingFromGroup(g);
   renderGroupList();
+}
+
+function generateJoinCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // ohne O/0, I/1 (Verwechslungsgefahr)
+  let code = '';
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
 }
 
 function createGroup() {
@@ -784,9 +1220,23 @@ function createGroup() {
   if (!user) return;
   const name = prompt('Name der neuen Gruppe (z. B. Klasse 5a):');
   if (!name || !name.trim()) return;
-  const newRef = push(ref(db, 'klassenlisten/' + user.uid + '/groups'));
-  set(newRef, { name: name.trim(), names: '', createdAt: Date.now(), updatedAt: Date.now() })
-    .then(() => selectGroup(newRef.key));
+
+  const newRef = push(ref(db, 'groups'));
+  const groupId = newRef.key;
+  const code = generateJoinCode();
+
+  set(newRef, {
+    name: name.trim(),
+    names: '',
+    ownerUid: user.uid,
+    joinCode: code,
+    members: { [user.uid]: true },
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  })
+    .then(() => set(ref(db, 'groupCodes/' + code), { groupId }))
+    .then(() => set(ref(db, 'userGroups/' + user.uid + '/' + groupId), true))
+    .then(() => selectGroup(groupId));
 }
 
 function renameGroup(id) {
@@ -795,27 +1245,85 @@ function renameGroup(id) {
   const current = groups[id];
   const name = prompt('Neuer Name für die Gruppe:', current ? current.name : '');
   if (!name || !name.trim()) return;
-  set(ref(db, 'klassenlisten/' + user.uid + '/groups/' + id + '/name'), name.trim());
+  set(ref(db, 'groups/' + id + '/name'), name.trim());
 }
 
-function deleteGroup(id) {
+function deleteOrLeaveGroup(id, isOwner) {
   const user = auth && auth.currentUser;
   if (!user) return;
   const current = groups[id];
-  if (!confirm('Gruppe "' + (current ? current.name : '') + '" wirklich löschen? Das kann nicht rückgängig gemacht werden.')) return;
-  remove(ref(db, 'klassenlisten/' + user.uid + '/groups/' + id)).then(() => {
-    if (activeGroupId === id) {
-      activeGroupId = null;
-      activeGroupName.textContent = 'Ohne Gruppe';
-      workspaceSub.textContent = 'Wähle links eine Gruppe aus oder lege eine neue an.';
-      namesEl.value = '';
-      namesEl.dispatchEvent(new Event('input'));
-      resultsEl.innerHTML = '';
-    }
-  });
+  const label = current ? current.name : '';
+
+  if (isOwner) {
+    if (!confirm('Gruppe "' + label + '" für ALLE Mitglieder löschen? Das kann nicht rückgängig gemacht werden.')) return;
+    remove(ref(db, 'groups/' + id));
+    remove(ref(db, 'userGroups/' + user.uid + '/' + id));
+  } else {
+    if (!confirm('Gruppe "' + label + '" verlassen? Du verlierst den Zugriff, andere Mitglieder behalten ihn.')) return;
+    remove(ref(db, 'groups/' + id + '/members/' + user.uid));
+    remove(ref(db, 'userGroups/' + user.uid + '/' + id));
+  }
+
+  if (activeGroupId === id) {
+    activeGroupId = null;
+    activeGroupName.textContent = 'Ohne Gruppe';
+    workspaceSub.textContent = 'Wähle links eine Gruppe aus oder lege eine neue an.';
+    namesEl.value = '';
+    namesEl.dispatchEvent(new Event('input'));
+    resultsEl.innerHTML = '';
+  }
+}
+
+function shareGroup(id) {
+  const g = groups[id];
+  if (!g) return;
+  const code = g.joinCode;
+  if (code) {
+    alert('Beitritts-Code für "' + g.name + '":\n\n' + code + '\n\nDiese/r Kolleg:in trägt den Code links unter "Gruppe beitreten" ein und hat danach vollen Zugriff auf diese Gruppe.');
+  } else {
+    alert('Für diese Gruppe existiert noch kein Code. Bitte kurz neu laden und erneut versuchen.');
+  }
 }
 
 newGroupBtn.addEventListener('click', createGroup);
+
+// ---- Gruppe per Code beitreten ----
+const joinCodeInput = document.getElementById('joinCodeInput');
+const joinGroupBtn = document.getElementById('joinGroupBtn');
+const joinMessage = document.getElementById('joinMessage');
+
+async function joinGroupByCode() {
+  const user = auth && auth.currentUser;
+  if (!user) { joinMessage.textContent = 'Bitte zuerst anmelden.'; return; }
+
+  const code = joinCodeInput.value.trim().toUpperCase();
+  if (!code) return;
+
+  joinGroupBtn.disabled = true;
+  joinMessage.textContent = 'Prüfe Code…';
+
+  try {
+    await set(ref(db, 'pendingJoinCode/' + user.uid), code);
+    const snap = await get(ref(db, 'groupCodes/' + code));
+    if (!snap.exists()) {
+      joinMessage.textContent = 'Code nicht gefunden. Bitte prüfen.';
+      joinGroupBtn.disabled = false;
+      return;
+    }
+    const groupId = snap.val().groupId;
+    await set(ref(db, 'groups/' + groupId + '/members/' + user.uid), true);
+    await set(ref(db, 'userGroups/' + user.uid + '/' + groupId), true);
+    joinCodeInput.value = '';
+    joinMessage.textContent = 'Beigetreten!';
+    setTimeout(() => { joinMessage.textContent = ''; }, 2500);
+  } catch (err) {
+    joinMessage.textContent = 'Beitreten fehlgeschlagen. Code prüfen oder erneut versuchen.';
+  } finally {
+    joinGroupBtn.disabled = false;
+  }
+}
+joinGroupBtn.addEventListener('click', joinGroupByCode);
+joinCodeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') joinGroupByCode(); });
 
 // ================= Autosave =================
 namesEl.addEventListener('input', () => {
@@ -828,8 +1336,8 @@ namesEl.addEventListener('input', () => {
   saveIndicator.textContent = 'Tippt…';
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    set(ref(db, 'klassenlisten/' + user.uid + '/groups/' + activeGroupId + '/names'), namesEl.value);
-    set(ref(db, 'klassenlisten/' + user.uid + '/groups/' + activeGroupId + '/updatedAt'), Date.now());
+    set(ref(db, 'groups/' + activeGroupId + '/names'), namesEl.value);
+    set(ref(db, 'groups/' + activeGroupId + '/updatedAt'), Date.now());
     saveIndicator.textContent = 'Gespeichert';
     setTimeout(() => { if (saveIndicator.textContent === 'Gespeichert') saveIndicator.textContent = ''; }, 1500);
   }, 700);
@@ -856,9 +1364,48 @@ registerBtn.addEventListener('click', () => {
 
 logoutBtn.addEventListener('click', () => { signOut(auth); });
 
+let groupListeners = {}; // groupId -> unsubscribe function
+let userGroupsUnsub = null;
+
+function attachGroupListener(groupId) {
+  if (groupListeners[groupId]) return;
+  const user = auth.currentUser;
+  const gRef = ref(db, 'groups/' + groupId);
+  onValue(gRef, (snapshot) => {
+    if (snapshot.exists()) {
+      groups[groupId] = snapshot.val();
+    } else {
+      // Gruppe existiert nicht mehr (z. B. von Owner gelöscht) -> eigenen Index-Eintrag aufräumen
+      delete groups[groupId];
+      if (user) remove(ref(db, 'userGroups/' + user.uid + '/' + groupId));
+      if (activeGroupId === groupId) {
+        activeGroupId = null;
+        activeGroupName.textContent = 'Ohne Gruppe';
+        namesEl.value = '';
+        namesEl.dispatchEvent(new Event('input'));
+      }
+    }
+    renderGroupList();
+  });
+  groupListeners[groupId] = () => off(gRef);
+}
+
+function detachGroupListener(groupId) {
+  if (groupListeners[groupId]) {
+    groupListeners[groupId]();
+    delete groupListeners[groupId];
+  }
+  delete groups[groupId];
+}
+
+function detachAllGroupListeners() {
+  Object.keys(groupListeners).forEach(detachGroupListener);
+}
+
 if (auth) {
   onAuthStateChanged(auth, (user) => {
-    if (groupsUnsub) { groupsUnsub(); groupsUnsub = null; }
+    if (userGroupsUnsub) { userGroupsUnsub(); userGroupsUnsub = null; }
+    detachAllGroupListeners();
     groups = {};
     activeGroupId = null;
 
@@ -867,18 +1414,27 @@ if (auth) {
       authForm.style.display = 'none';
       loggedInRow.style.display = 'flex';
 
-      const groupsRef = ref(db, 'klassenlisten/' + user.uid + '/groups');
-      onValue(groupsRef, (snapshot) => {
-        groups = snapshot.exists() ? snapshot.val() : {};
-        if (activeGroupId && !groups[activeGroupId]) {
-          activeGroupId = null;
-          activeGroupName.textContent = 'Ohne Gruppe';
-          namesEl.value = '';
-          namesEl.dispatchEvent(new Event('input'));
-        }
+      const userGroupsRef = ref(db, 'userGroups/' + user.uid);
+      onValue(userGroupsRef, (snapshot) => {
+        const ids = snapshot.exists() ? Object.keys(snapshot.val()) : [];
+
+        // Listener für neue Gruppen-IDs anhängen
+        ids.forEach(id => attachGroupListener(id));
+        // Listener für nicht mehr zugängliche Gruppen entfernen
+        Object.keys(groupListeners).forEach(id => {
+          if (!ids.includes(id)) {
+            detachGroupListener(id);
+            if (activeGroupId === id) {
+              activeGroupId = null;
+              activeGroupName.textContent = 'Ohne Gruppe';
+              namesEl.value = '';
+              namesEl.dispatchEvent(new Event('input'));
+            }
+          }
+        });
         renderGroupList();
       });
-      groupsUnsub = () => off(groupsRef);
+      userGroupsUnsub = () => off(userGroupsRef);
     } else {
       accountStatus.textContent = 'Nicht angemeldet';
       authForm.style.display = 'flex';
@@ -1016,6 +1572,444 @@ function runDraw() {
 }
 
 drawBtn.addEventListener('click', runDraw);
+
+// ================= Zufällig aufrufen (Slot machine) =================
+const callCount = document.getElementById('callCount');
+const callDecrease = document.getElementById('callDecrease');
+const callIncrease = document.getElementById('callIncrease');
+const noRepeat = document.getElementById('noRepeat');
+const slotWindow = document.getElementById('slotWindow');
+const slotDisplay = document.getElementById('slotDisplay');
+const calledHint = document.getElementById('calledHint');
+const callBtn = document.getElementById('callBtn');
+const resetCalledBtn = document.getElementById('resetCalledBtn');
+const calledChips = document.getElementById('calledChips');
+
+let calledNames = new Set();
+
+callDecrease.addEventListener('click', () => {
+  callCount.value = Math.max(1, parseInt(callCount.value || '1', 10) - 1);
+});
+callIncrease.addEventListener('click', () => {
+  callCount.value = parseInt(callCount.value || '1', 10) + 1;
+});
+
+function updateCalledHint() {
+  const total = getNames().length;
+  if (total === 0) {
+    calledHint.textContent = 'Noch keine Namen eingetragen.';
+  } else if (calledNames.size === 0) {
+    calledHint.textContent = 'Noch niemand aufgerufen. (0 von ' + total + ')';
+  } else {
+    calledHint.textContent = calledNames.size + ' von ' + total + ' bereits aufgerufen.';
+  }
+}
+
+function resetCalled() {
+  calledNames = new Set();
+  calledChips.innerHTML = '';
+  slotDisplay.textContent = '–';
+  slotWindow.classList.remove('landed');
+  updateCalledHint();
+}
+resetCalledBtn.addEventListener('click', resetCalled);
+
+function addCalledChip(name) {
+  const li = document.createElement('li');
+  li.textContent = name;
+  calledChips.appendChild(li);
+}
+
+function spin(finalName, durationMs) {
+  return new Promise(resolve => {
+    const pool = getNames();
+    slotWindow.classList.remove('landed');
+    let elapsed = 0;
+    let interval = 55;
+
+    function tick() {
+      slotDisplay.textContent = pool[Math.floor(Math.random() * pool.length)];
+      elapsed += interval;
+      interval *= 1.16;
+      if (elapsed < durationMs) {
+        setTimeout(tick, interval);
+      } else {
+        slotDisplay.textContent = finalName;
+        slotWindow.classList.add('landed');
+        resolve();
+      }
+    }
+    tick();
+  });
+}
+
+function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function callStudents() {
+  const all = getNames();
+  if (all.length === 0) {
+    calledHint.textContent = 'Erst Namen im Feld oben eintragen.';
+    return;
+  }
+
+  let pool = noRepeat.checked ? all.filter(n => !calledNames.has(n)) : all.slice();
+  if (pool.length === 0) {
+    calledHint.textContent = 'Alle wurden bereits aufgerufen. "Liste zurücksetzen" klicken, um erneut zu starten.';
+    return;
+  }
+
+  const count = Math.min(parseInt(callCount.value, 10) || 1, pool.length);
+  callBtn.disabled = true;
+  resetCalledBtn.disabled = true;
+
+  for (let i = 0; i < count; i++) {
+    const idx = Math.floor(Math.random() * pool.length);
+    const name = pool[idx];
+    pool.splice(idx, 1);
+    await spin(name, 1300 + i * 150);
+    calledNames.add(name);
+    addCalledChip(name);
+    updateCalledHint();
+    if (i < count - 1) await wait(500);
+  }
+
+  callBtn.disabled = false;
+  resetCalledBtn.disabled = false;
+}
+callBtn.addEventListener('click', callStudents);
+
+updateCalledHint();
+
+// ================= Sitzplan =================
+const layoutReihen = document.getElementById('layoutReihen');
+const layoutUform = document.getElementById('layoutUform');
+const layoutGruppen = document.getElementById('layoutGruppen');
+const proposeSeatingBtn = document.getElementById('proposeSeatingBtn');
+const exportPdfBtn = document.getElementById('exportPdfBtn');
+const seatingHint = document.getElementById('seatingHint');
+const seatingSaveIndicator = document.getElementById('seatingSaveIndicator');
+const deskGrid = document.getElementById('deskGrid');
+const frontRowList = document.getElementById('frontRowList');
+const ruleNameA = document.getElementById('ruleNameA');
+const ruleNameB = document.getElementById('ruleNameB');
+const addRuleBtn = document.getElementById('addRuleBtn');
+const ruleList = document.getElementById('ruleList');
+const printRoot = document.getElementById('printRoot');
+
+let seatingLayout = 'reihen';
+let currentDesks = [];         // [{id, col, row, seats:[nameOrNull, nameOrNull]}]
+let frontRowSet = new Set();
+let notTogetherPairs = [];     // [[nameA, nameB], ...]
+let selectedSeat = null;       // {deskIdx, seatIdx}
+let seatingSaveTimer = null;
+
+function setLayout(newLayout) {
+  seatingLayout = newLayout;
+  [layoutReihen, layoutUform, layoutGruppen].forEach(btn => btn.setAttribute('aria-pressed', 'false'));
+  ({ reihen: layoutReihen, uform: layoutUform, gruppentische: layoutGruppen }[newLayout]).setAttribute('aria-pressed', 'true');
+}
+layoutReihen.addEventListener('click', () => { setLayout('reihen'); queueSeatingSave(); });
+layoutUform.addEventListener('click', () => { setLayout('uform'); queueSeatingSave(); });
+layoutGruppen.addEventListener('click', () => { setLayout('gruppentische'); queueSeatingSave(); });
+
+// ---- Layout-Engine: liefert Grid-Koordinaten für jeden Tisch ----
+function computeDeskPositions(layout, deskCount) {
+  if (deskCount <= 0) return { cols: 1, rows: 1, positions: [] };
+
+  if (layout === 'reihen') {
+    const rows = Math.ceil(deskCount / 2);
+    const positions = [];
+    let n = 0;
+    for (let r = 0; r < rows && n < deskCount; r++) {
+      positions.push({ col: 1, row: r + 1 }); n++;
+      if (n < deskCount) { positions.push({ col: 3, row: r + 1 }); n++; }
+    }
+    return { cols: 3, rows, positions };
+  }
+
+  if (layout === 'uform') {
+    const armLength = Math.max(2, Math.ceil(deskCount / 4));
+    const baseWidth = Math.max(1, deskCount - armLength * 2);
+    const cols = baseWidth + 2;
+    const rows = armLength + 1;
+    const full = [];
+    for (let r = 1; r <= armLength; r++) full.push({ col: 1, row: r });
+    for (let c = 1; c <= baseWidth; c++) full.push({ col: c + 1, row: armLength + 1 });
+    for (let r = armLength; r >= 1; r--) full.push({ col: cols, row: r });
+    return { cols, rows, positions: full.slice(0, deskCount) };
+  }
+
+  // Gruppentische: Zweier-Inseln (4 Plätze) im Raster
+  const podCols = Math.max(1, Math.ceil(Math.sqrt(Math.ceil(deskCount / 2))));
+  const positions = [];
+  let n = 0, pod = 0;
+  while (n < deskCount) {
+    const podRow = Math.floor(pod / podCols);
+    const podCol = pod % podCols;
+    positions.push({ col: podCol * 3 + 1, row: podRow * 2 + 1 }); n++;
+    if (n < deskCount) { positions.push({ col: podCol * 3 + 2, row: podRow * 2 + 1 }); n++; }
+    pod++;
+  }
+  const rows = (Math.floor((pod - 1) / podCols) + 1) * 2;
+  return { cols: podCols * 3, rows, positions };
+}
+
+// ---- Regeln: Auswahl-Listen & Chips ----
+function refreshRuleOptions() {
+  const names = getNames();
+
+  frontRowList.innerHTML = '';
+  names.forEach(name => {
+    const li = document.createElement('li');
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'chip-toggle' + (frontRowSet.has(name) ? ' active' : '');
+    btn.textContent = name;
+    btn.addEventListener('click', () => {
+      if (frontRowSet.has(name)) frontRowSet.delete(name); else frontRowSet.add(name);
+      refreshRuleOptions();
+      queueSeatingSave();
+    });
+    li.appendChild(btn);
+    frontRowList.appendChild(li);
+  });
+
+  const fillSelect = (sel) => {
+    const prev = sel.value;
+    sel.innerHTML = '';
+    names.forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name; opt.textContent = name;
+      sel.appendChild(opt);
+    });
+    if (names.includes(prev)) sel.value = prev;
+  };
+  fillSelect(ruleNameA);
+  fillSelect(ruleNameB);
+
+  renderRuleList();
+}
+
+function renderRuleList() {
+  ruleList.innerHTML = '';
+  notTogetherPairs.forEach((pair, idx) => {
+    const li = document.createElement('li');
+    const label = document.createElement('span');
+    label.textContent = pair[0] + ' ↔ ' + pair[1];
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.textContent = '✕';
+    removeBtn.addEventListener('click', () => {
+      notTogetherPairs.splice(idx, 1);
+      renderRuleList();
+      queueSeatingSave();
+    });
+    li.append(label, removeBtn);
+    ruleList.appendChild(li);
+  });
+}
+
+addRuleBtn.addEventListener('click', () => {
+  const a = ruleNameA.value, b = ruleNameB.value;
+  if (!a || !b || a === b) return;
+  const exists = notTogetherPairs.some(p => (p[0] === a && p[1] === b) || (p[0] === b && p[1] === a));
+  if (!exists) notTogetherPairs.push([a, b]);
+  renderRuleList();
+  queueSeatingSave();
+});
+
+// ---- Sitzplan vorschlagen (Los + Regelprüfung) ----
+function proposeSeating() {
+  const names = getNames();
+  if (names.length === 0) {
+    seatingHint.textContent = 'Erst Namen im Feld oben eintragen.';
+    return;
+  }
+
+  const deskCount = Math.ceil(names.length / 2);
+  const layoutData = computeDeskPositions(seatingLayout, deskCount);
+  const desks = layoutData.positions.map((p, i) => ({ id: 'd' + i, col: p.col, row: p.row, seats: [null, null] }));
+
+  let flatSeats = [];
+  desks.forEach((d, di) => { flatSeats.push({ di, si: 0 }); flatSeats.push({ di, si: 1 }); });
+  flatSeats.sort((a, b) => desks[a.di].row - desks[b.di].row);
+
+  const frontNames = shuffle(names.filter(n => frontRowSet.has(n)));
+  const otherNames = shuffle(names.filter(n => !frontRowSet.has(n)));
+
+  let pointer = 0;
+  const place = (name) => { if (pointer < flatSeats.length) { const s = flatSeats[pointer++]; desks[s.di].seats[s.si] = name; } };
+  frontNames.forEach(place);
+  otherNames.forEach(place);
+
+  function findConflictDeskIndexes() {
+    const idxs = [];
+    desks.forEach((d, di) => {
+      const [a, b] = d.seats;
+      if (a && b && notTogetherPairs.some(p => (p[0] === a && p[1] === b) || (p[0] === b && p[1] === a))) idxs.push(di);
+    });
+    return idxs;
+  }
+
+  let tries = 0;
+  let conflicts = findConflictDeskIndexes();
+  while (conflicts.length > 0 && tries < 300) {
+    const di = conflicts[0];
+    const si = Math.random() < 0.5 ? 0 : 1;
+    const otherDi = Math.floor(Math.random() * desks.length);
+    const otherSi = Math.random() < 0.5 ? 0 : 1;
+    const tmp = desks[di].seats[si];
+    desks[di].seats[si] = desks[otherDi].seats[otherSi];
+    desks[otherDi].seats[otherSi] = tmp;
+    conflicts = findConflictDeskIndexes();
+    tries++;
+  }
+
+  currentDesks = desks;
+  selectedSeat = null;
+  renderSeating(conflicts);
+  seatingHint.textContent = conflicts.length > 0
+    ? conflicts.length + ' Tisch(e) verletzen eine "nicht zusammen"-Regel (rot markiert) – bitte manuell tauschen.'
+    : 'Sitzplan erstellt. Zwei Plätze antippen, um sie zu tauschen.';
+  queueSeatingSave();
+}
+proposeSeatingBtn.addEventListener('click', proposeSeating);
+
+// ---- Rendering ----
+function renderSeating(conflictIdxs) {
+  conflictIdxs = conflictIdxs || [];
+  deskGrid.innerHTML = '';
+  if (currentDesks.length === 0) return;
+
+  const maxCol = Math.max(...currentDesks.map(d => d.col));
+  const maxRow = Math.max(...currentDesks.map(d => d.row));
+  deskGrid.style.gridTemplateColumns = 'repeat(' + maxCol + ', minmax(90px, 1fr))';
+  deskGrid.style.gridTemplateRows = 'repeat(' + maxRow + ', auto)';
+
+  currentDesks.forEach((desk, di) => {
+    const deskEl = document.createElement('div');
+    deskEl.className = 'desk' + (conflictIdxs.includes(di) ? ' conflict' : '');
+    deskEl.style.gridColumn = desk.col;
+    deskEl.style.gridRow = desk.row;
+
+    desk.seats.forEach((name, si) => {
+      const seatEl = document.createElement('div');
+      const isFront = name && frontRowSet.has(name);
+      seatEl.className = 'seat' + (name ? '' : ' empty') + (isFront ? ' front-marked' : '');
+      seatEl.textContent = name || 'frei';
+      seatEl.addEventListener('click', () => handleSeatClick(di, si));
+      deskEl.appendChild(seatEl);
+    });
+
+    deskGrid.appendChild(deskEl);
+  });
+
+  markSelectedSeat();
+}
+
+function markSelectedSeat() {
+  document.querySelectorAll('.seat.selected').forEach(el => el.classList.remove('selected'));
+  if (!selectedSeat) return;
+  const deskEl = deskGrid.children[selectedSeat.deskIdx];
+  if (deskEl) deskEl.children[selectedSeat.seatIdx].classList.add('selected');
+}
+
+function handleSeatClick(deskIdx, seatIdx) {
+  if (!selectedSeat) {
+    if (!currentDesks[deskIdx].seats[seatIdx]) return; // leere Plätze nicht als Start wählbar
+    selectedSeat = { deskIdx, seatIdx };
+    markSelectedSeat();
+    return;
+  }
+  if (selectedSeat.deskIdx === deskIdx && selectedSeat.seatIdx === seatIdx) {
+    selectedSeat = null;
+    markSelectedSeat();
+    return;
+  }
+  const a = currentDesks[selectedSeat.deskIdx].seats[selectedSeat.seatIdx];
+  const b = currentDesks[deskIdx].seats[seatIdx];
+  currentDesks[selectedSeat.deskIdx].seats[selectedSeat.seatIdx] = b;
+  currentDesks[deskIdx].seats[seatIdx] = a;
+  selectedSeat = null;
+  renderSeating(checkConflictsOnly());
+  queueSeatingSave();
+}
+
+function checkConflictsOnly() {
+  const idxs = [];
+  currentDesks.forEach((d, di) => {
+    const [a, b] = d.seats;
+    if (a && b && notTogetherPairs.some(p => (p[0] === a && p[1] === b) || (p[0] === b && p[1] === a))) idxs.push(di);
+  });
+  return idxs;
+}
+
+// ---- Persistenz (pro Gruppe) ----
+function loadSeatingFromGroup(g) {
+  const s = (g && g.seating) || null;
+  seatingLayout = (s && s.layout) || 'reihen';
+  setLayout(seatingLayout);
+  currentDesks = (s && s.desks) || [];
+  frontRowSet = new Set((s && s.frontRow) || []);
+  notTogetherPairs = (s && s.notTogether) || [];
+  selectedSeat = null;
+  refreshRuleOptions();
+  renderSeating(checkConflictsOnly());
+  seatingHint.textContent = currentDesks.length > 0
+    ? 'Gespeicherter Sitzplan geladen.'
+    : 'Noch kein Sitzplan erstellt.';
+}
+
+function queueSeatingSave() {
+  const user = auth && auth.currentUser;
+  if (!user || !activeGroupId) return;
+  seatingSaveIndicator.textContent = 'Speichert…';
+  clearTimeout(seatingSaveTimer);
+  seatingSaveTimer = setTimeout(() => {
+    set(ref(db, 'groups/' + activeGroupId + '/seating'), {
+      layout: seatingLayout,
+      desks: currentDesks,
+      frontRow: Array.from(frontRowSet),
+      notTogether: notTogetherPairs,
+      updatedAt: Date.now()
+    });
+    seatingSaveIndicator.textContent = 'Gespeichert';
+    setTimeout(() => { if (seatingSaveIndicator.textContent === 'Gespeichert') seatingSaveIndicator.textContent = ''; }, 1500);
+  }, 700);
+}
+
+// ---- PDF-Export (Drucken-Dialog) ----
+exportPdfBtn.addEventListener('click', () => {
+  if (currentDesks.length === 0) {
+    seatingHint.textContent = 'Erst einen Sitzplan vorschlagen, bevor du exportierst.';
+    return;
+  }
+  const groupTitle = activeGroupName.textContent || 'Sitzplan';
+  const dateStr = new Date().toLocaleDateString('de-DE');
+  printRoot.innerHTML = '';
+
+  const heading = document.createElement('h2');
+  heading.textContent = groupTitle + ' – Sitzplan';
+  const meta = document.createElement('p');
+  meta.className = 'print-meta';
+  meta.textContent = 'Erstellt am ' + dateStr;
+
+  const roomClone = document.getElementById('seatingRoom').cloneNode(true);
+  roomClone.querySelectorAll('.seat').forEach(el => el.replaceWith(el.cloneNode(true))); // Klick-Handler entfernen
+
+  printRoot.append(heading, meta, roomClone);
+  document.body.classList.add('print-mode');
+  window.print();
+});
+window.addEventListener('afterprint', () => {
+  document.body.classList.remove('print-mode');
+  printRoot.innerHTML = '';
+});
+
+// Namensänderungen -> Regel-Auswahllisten aktuell halten
+namesEl.addEventListener('input', refreshRuleOptions);
+refreshRuleOptions();
+
 renderGroupList();
 </script>
 </body>
