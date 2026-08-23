@@ -22,4 +22,4 @@ navButtons.forEach(btn => {
   btn.addEventListener('click', () => showView(btn.dataset.view));
 });
 
-showView('manage');
+showView('draw');

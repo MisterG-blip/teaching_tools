@@ -11,7 +11,7 @@ import {
 
 const pencilColors = ['var(--pencil-1)', 'var(--pencil-2)', 'var(--pencil-3)', 'var(--pencil-4)', 'var(--pencil-5)', 'var(--pencil-6)'];
 let mode = 'groups';
-let lastGroups = null;
+export let lastGroups = null;
 
 function setMode(newMode) {
   mode = newMode;

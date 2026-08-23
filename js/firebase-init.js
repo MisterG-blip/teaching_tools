@@ -9,7 +9,7 @@ import { getDatabase } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-
 import { accountStatus, authForm } from './dom.js';
 
 // ---------------------------------------------------------------
-// FIREBASE-KONFIGURATION – eigenes TeacherSupport-Projekt.
+// FIREBASE-KONFIGURATION – eigenes Klassenlotse-Projekt.
 // Werte aus: Firebase-Konsole -> Projekteinstellungen -> Meine Apps
 // ---------------------------------------------------------------
 const firebaseConfig = {

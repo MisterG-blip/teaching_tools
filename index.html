@@ -20,7 +20,6 @@
     <div class="brand-text">
       <h1>Klassenlotse</h1>
       <span class="brand-sub">Dein Bootsmann für den Unterricht</span>
-      <div class="creator-badge">by <strong>Mister G</strong></div>
     </div>
   </div>
 
@@ -42,19 +41,20 @@
 
 <div class="app-shell">
   <nav class="main-nav" id="mainNav">
-    <button type="button" class="nav-item" data-view="manage">📁 Gruppen verwalten</button>
+    <p class="nav-section-label">Unterrichtsorganisation</p>
+    <button type="button" class="nav-item" data-view="draw">🎲 Gruppen auslosen</button>
+    <button type="button" class="nav-item" data-view="rollcall">🎰 Zufällig aufrufen</button>
 
     <p class="nav-section-label">Organisation</p>
     <button type="button" class="nav-item" data-view="duties">🧹 Klassendienste</button>
     <button type="button" class="nav-item" data-view="seating">🪑 Sitzplan</button>
 
-    <p class="nav-section-label">Unterrichtsorganisation</p>
-    <button type="button" class="nav-item" data-view="draw">🎲 Gruppen auslosen</button>
-    <button type="button" class="nav-item" data-view="rollcall">🎰 Zufällig aufrufen</button>
+    <p class="nav-section-label">Verwaltung</p>
+    <button type="button" class="nav-item" data-view="manage">📁 Gruppen verwalten</button>
   </nav>
 
   <div class="view-area">
-    <div class="group-picker-bar is-hidden" id="groupPickerBar">
+    <div class="group-picker-bar" id="groupPickerBar">
       <label class="field-label" for="groupSelect">Aktuelle Gruppe</label>
       <select id="groupSelect">
         <option value="">– Gruppe wählen –</option>
@@ -63,7 +63,7 @@
     </div>
 
     <!-- ===================== Gruppen verwalten ===================== -->
-    <section class="view" id="view-manage" data-view="manage">
+    <section class="view is-hidden" id="view-manage" data-view="manage">
       <div class="workspace">
         <div class="workspace-head">
           <h2>📁 Gruppen verwalten</h2>
@@ -117,13 +117,134 @@
           <h2>🪑 Sitzplan</h2>
           <span class="save-indicator" id="seatingSaveIndicator"></span>
         </div>
-        <p class="workspace-sub">Raster wählen, Los klicken, dann bei Bedarf zwei Plätze antippen, um zu tauschen.</p>
+        <p class="workspace-sub">Raster wählen, Werte eintragen, Layout erzeugen – danach Tische bei Bedarf manuell anpassen.</p>
 
         <div class="mode-toggle layout-toggle" role="group" aria-label="Sitzplan-Raster">
           <button type="button" class="layout-btn" id="layoutReihen" aria-pressed="true">Reihen</button>
           <button type="button" class="layout-btn" id="layoutUform" aria-pressed="false">U-Form</button>
           <button type="button" class="layout-btn" id="layoutGruppen" aria-pressed="false">Gruppentische</button>
+          <button type="button" class="layout-btn" id="layoutSchmetterling" aria-pressed="false">Schmetterling</button>
+          <button type="button" class="layout-btn" id="layoutGitter" aria-pressed="false">Gitter</button>
+          <button type="button" class="layout-btn" id="layoutDoppelU" aria-pressed="false">Doppel-U</button>
         </div>
+
+        <div class="layout-params" id="paramsDeskType">
+          <div class="param-field">
+            <label class="field-label" id="deskTypeLabel">Tischtyp</label>
+            <div class="mode-toggle" role="group" aria-labelledby="deskTypeLabel">
+              <button type="button" id="deskTypeSingle" aria-pressed="false">Einzeltisch</button>
+              <button type="button" id="deskTypeDouble" aria-pressed="true">Doppeltisch</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="layout-params" id="paramsReihen">
+          <div class="param-field">
+            <label class="field-label" for="reihenAnzahlReihen">Anzahl Reihen</label>
+            <input type="number" id="reihenAnzahlReihen" value="4" min="1">
+          </div>
+          <div class="param-field">
+            <label class="field-label" for="reihenTischeProReihe">Tische pro Reihe</label>
+            <input type="number" id="reihenTischeProReihe" value="3" min="1">
+          </div>
+        </div>
+
+        <div class="layout-params" id="paramsUform" hidden>
+          <div class="param-field">
+            <label class="field-label" for="uformLinks">Länge linker Arm</label>
+            <input type="number" id="uformLinks" value="3" min="0">
+          </div>
+          <div class="param-field">
+            <label class="field-label" for="uformRechts">Länge rechter Arm</label>
+            <input type="number" id="uformRechts" value="3" min="0">
+          </div>
+          <div class="param-field">
+            <label class="field-label" for="uformBreite">Breite (unten)</label>
+            <input type="number" id="uformBreite" value="4" min="1">
+          </div>
+          <div class="param-field">
+            <label class="field-label" for="uformMitte">Tische in der Mitte</label>
+            <input type="number" id="uformMitte" value="0" min="0">
+          </div>
+        </div>
+
+        <div class="layout-params" id="paramsGruppentische" hidden>
+          <div class="param-field">
+            <label class="field-label" id="gruppenModeLabel">Einteilung nach</label>
+            <div class="mode-toggle" role="group" aria-labelledby="gruppenModeLabel">
+              <button type="button" id="gruppenModeCount" aria-pressed="true">Anzahl Gruppen</button>
+              <button type="button" id="gruppenModeSize" aria-pressed="false">Personen pro Gruppe</button>
+            </div>
+          </div>
+          <div class="param-field">
+            <label class="field-label" id="gruppenAnzahlLabel" for="gruppenAnzahl">Anzahl Gruppen</label>
+            <input type="number" id="gruppenAnzahl" value="4" min="1">
+          </div>
+          <label class="checkbox-row" id="useExistingDrawRow">
+            <input type="checkbox" id="useExistingDraw">
+            Bestehende Auslosung übernehmen (aus „Gruppen auslosen")
+          </label>
+        </div>
+
+        <div class="layout-params" id="paramsSchmetterling" hidden>
+          <div class="param-field">
+            <label class="field-label" for="schmetterlingSpine">Spinelänge (Reihen)</label>
+            <input type="number" id="schmetterlingSpine" value="5" min="3">
+          </div>
+          <div class="param-field">
+            <label class="field-label" for="schmetterlingArm">Armlänge (Tische)</label>
+            <input type="number" id="schmetterlingArm" value="3" min="1">
+          </div>
+        </div>
+
+        <div class="layout-params" id="paramsGitter" hidden>
+          <div class="param-field">
+            <label class="field-label" for="gitterAnzahlReihen">Anzahl Reihen</label>
+            <input type="number" id="gitterAnzahlReihen" value="5" min="1">
+          </div>
+          <div class="param-field">
+            <label class="field-label" for="gitterProReihe">Tische pro Reihe</label>
+            <input type="number" id="gitterProReihe" value="5" min="1">
+          </div>
+          <p class="hint" style="flex-basis:100%; margin:0;">Gitter nutzt automatisch Einzeltische.</p>
+        </div>
+
+        <div class="layout-params" id="paramsDoppelU" hidden>
+          <p class="rules-label" style="flex-basis:100%; margin:0 0 4px;">Äußeres U</p>
+          <div class="param-field">
+            <label class="field-label" for="dopUOuterLinks">Länge linker Arm</label>
+            <input type="number" id="dopUOuterLinks" value="4" min="0">
+          </div>
+          <div class="param-field">
+            <label class="field-label" for="dopUOuterRechts">Länge rechter Arm</label>
+            <input type="number" id="dopUOuterRechts" value="4" min="0">
+          </div>
+          <div class="param-field">
+            <label class="field-label" for="dopUOuterBreite">Breite</label>
+            <input type="number" id="dopUOuterBreite" value="6" min="1">
+          </div>
+          <p class="rules-label" style="flex-basis:100%; margin:12px 0 4px;">Inneres U</p>
+          <div class="param-field">
+            <label class="field-label" for="dopUInnerLinks">Länge linker Arm</label>
+            <input type="number" id="dopUInnerLinks" value="2" min="0">
+          </div>
+          <div class="param-field">
+            <label class="field-label" for="dopUInnerRechts">Länge rechter Arm</label>
+            <input type="number" id="dopUInnerRechts" value="2" min="0">
+          </div>
+          <div class="param-field">
+            <label class="field-label" for="dopUInnerBreite">Breite</label>
+            <input type="number" id="dopUInnerBreite" value="2" min="1">
+          </div>
+        </div>
+
+        <p class="hint" id="activeLayoutLabel">Aktuell gewählt: <strong>Reihen</strong></p>
+
+        <div class="seating-actions">
+          <button type="button" class="draw-btn" id="generateLayoutBtn">Layout erzeugen</button>
+          <button type="button" class="btn btn-ghost" id="toggleEditModeBtn">Tische bearbeiten</button>
+        </div>
+        <p class="hint" id="editModeHint">Im Bearbeitungsmodus: leeres Feld antippen fügt einen Tisch hinzu, Tisch antippen entfernt ihn, ↻ dreht ihn.</p>
 
         <details class="rules-panel" id="rulesPanel">
           <summary>Regeln verwalten</summary>
@@ -146,21 +267,23 @@
         </details>
 
         <div class="seating-actions">
-          <button type="button" class="draw-btn" id="proposeSeatingBtn">Sitzplan vorschlagen</button>
+          <button type="button" class="draw-btn" id="proposeSeatingBtn">Namen zuteilen</button>
           <button type="button" class="btn btn-ghost" id="exportPdfBtn">Als PDF exportieren</button>
         </div>
 
         <p class="hint" id="seatingHint">Noch kein Sitzplan erstellt.</p>
 
-        <div class="seating-room" id="seatingRoom">
-          <div class="board-bar">Tafel</div>
-          <div class="desk-grid" id="deskGrid"></div>
+        <div class="seating-room-wrap">
+          <div class="seating-room" id="seatingRoom">
+            <div class="board-bar">Tafel</div>
+            <div class="desk-grid" id="deskGrid"></div>
+          </div>
         </div>
       </div>
     </section>
 
     <!-- ===================== Unterrichtsorganisation: Gruppen auslosen ===================== -->
-    <section class="view is-hidden" id="view-draw" data-view="draw">
+    <section class="view" id="view-draw" data-view="draw">
       <div class="workspace">
         <div class="workspace-head">
           <h2>🎲 Gruppen auslosen</h2>
@@ -246,7 +369,10 @@
     <a href="https://ichwillzocken.com/docs/Datenschutz">Datenschutz</a>
     <a href="https://ichwillzocken.com/docs/Impressum">Impressum</a>
   </nav>
-  <p>© 2026 Klassenlotse · Ein Projekt von Mister G Apps</p>  
+  <p class="footer-brand">
+    <img src="assets/fuchs-logo.png" alt="Mister G Apps Logo" class="footer-logo">
+    © 2026 Klassenlotse by Mister G Apps
+  </p>
 </footer>
 
 <script type="module" src="js/main.js"></script>

@@ -1,76 +1,286 @@
 // ============================================================================
 // MODULE: Seating
-// PURPOSE: Sitzplan-Raster (Reihen / U-Form / Gruppentische), Regeln
-//          (vorne sitzen, nicht zusammen), Zufallszuteilung, manueller
-//          Tausch per Klick, Speichern pro Gruppe, PDF-Export
+// PURPOSE: Sitzplan-Raster (Reihen / U-Form / Gruppentische / Schmetterling /
+//          Gitter / Doppel-U) mit echten Parametern erzeugen, Tischtyp
+//          (Einzel-/Doppeltisch), manuelles Hinzufügen/Entfernen/Drehen von
+//          Tischen per Klick, Regeln, Namenszuteilung, Speichern, PDF-Export.
 // ============================================================================
 
 import { ref, set } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js';
 import { auth, db } from './firebase-init.js';
 import { getNames, shuffle } from './utils.js';
 import { activeGroupId } from './groups.js';
+import { lastGroups } from './draw.js';
 import {
-  layoutReihen, layoutUform, layoutGruppen, proposeSeatingBtn, exportPdfBtn,
-  seatingHint, seatingSaveIndicator, deskGrid, frontRowList, ruleNameA,
-  ruleNameB, addRuleBtn, ruleList, printRoot, namesEl, activeGroupName
+  layoutReihen, layoutUform, layoutGruppen, layoutSchmetterling, layoutGitter, layoutDoppelU,
+  paramsDeskType, deskTypeSingle, deskTypeDouble,
+  paramsReihen, paramsUform, paramsGruppentische, paramsSchmetterling, paramsGitter, paramsDoppelU,
+  reihenAnzahlReihen, reihenTischeProReihe,
+  uformLinks, uformRechts, uformBreite, uformMitte,
+  gruppenModeCount, gruppenModeSize, gruppenAnzahl, gruppenAnzahlLabel, useExistingDraw,
+  schmetterlingSpine, schmetterlingArm,
+  gitterAnzahlReihen, gitterProReihe,
+  dopUOuterLinks, dopUOuterRechts, dopUOuterBreite, dopUInnerLinks, dopUInnerRechts, dopUInnerBreite,
+  generateLayoutBtn, activeLayoutLabel, toggleEditModeBtn, editModeHint, proposeSeatingBtn, exportPdfBtn,
+  seatingHint, seatingSaveIndicator, seatingRoom, deskGrid,
+  frontRowList, ruleNameA, ruleNameB, addRuleBtn, ruleList, printRoot,
+  namesEl, activeGroupName
 } from './dom.js';
 
-let seatingLayout = 'reihen';
-let currentDesks = [];         // [{id, col, row, seats:[nameOrNull, nameOrNull]}]
+const GRID_COLS = 16;
+const GRID_ROWS = 12;
+
+const LAYOUT_PANELS = {
+  reihen: paramsReihen,
+  uform: paramsUform,
+  gruppentische: paramsGruppentische,
+  schmetterling: paramsSchmetterling,
+  gitter: paramsGitter,
+  doppelu: paramsDoppelU
+};
+const LAYOUT_BUTTONS = {
+  reihen: layoutReihen,
+  uform: layoutUform,
+  gruppentische: layoutGruppen,
+  schmetterling: layoutSchmetterling,
+  gitter: layoutGitter,
+  doppelu: layoutDoppelU
+};
+
+let currentLayout = 'reihen';
+let gruppenMode = 'count';
+let deskType = 'double';      // 'single' | 'double' - gilt für alle Vorlagen außer Gitter (dort immer 'single')
+let desks = [];               // [{id, col, row, rotation, seats:[nameOrNull, ...]}]
 let frontRowSet = new Set();
-let notTogetherPairs = [];     // [[nameA, nameB], ...]
-let selectedSeat = null;       // {deskIdx, seatIdx}
+let notTogetherPairs = [];    // [[nameA, nameB], ...]
+let selectedSeat = null;      // {deskIdx, seatIdx} - nur im Namen-Modus
+let editMode = false;
 let seatingSaveTimer = null;
 
-function setLayout(newLayout) {
-  seatingLayout = newLayout;
-  [layoutReihen, layoutUform, layoutGruppen].forEach(btn => btn.setAttribute('aria-pressed', 'false'));
-  ({ reihen: layoutReihen, uform: layoutUform, gruppentische: layoutGruppen }[newLayout]).setAttribute('aria-pressed', 'true');
+function intval(el, fallback) {
+  const n = parseInt(el.value, 10);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
 }
-layoutReihen.addEventListener('click', () => { setLayout('reihen'); queueSeatingSave(); });
-layoutUform.addEventListener('click', () => { setLayout('uform'); queueSeatingSave(); });
-layoutGruppen.addEventListener('click', () => { setLayout('gruppentische'); queueSeatingSave(); });
+function intvalMin0(el) {
+  const n = parseInt(el.value, 10);
+  return Number.isFinite(n) && n >= 0 ? n : 0;
+}
 
-// ---- Layout-Engine: liefert Grid-Koordinaten für jeden Tisch ----
-function computeDeskPositions(layout, deskCount) {
-  if (deskCount <= 0) return { cols: 1, rows: 1, positions: [] };
+const LAYOUT_DISPLAY_NAMES = {
+  reihen: 'Reihen',
+  uform: 'U-Form',
+  gruppentische: 'Gruppentische',
+  schmetterling: 'Schmetterling',
+  gitter: 'Gitter',
+  doppelu: 'Doppel-U'
+};
 
-  if (layout === 'reihen') {
-    const rows = Math.ceil(deskCount / 2);
-    const positions = [];
-    let n = 0;
-    for (let r = 0; r < rows && n < deskCount; r++) {
-      positions.push({ col: 1, row: r + 1 }); n++;
-      if (n < deskCount) { positions.push({ col: 3, row: r + 1 }); n++; }
-    }
-    return { cols: 3, rows, positions };
-  }
+// ---- Layout-Auswahl: welches Parameter-Panel ist sichtbar ----
+function setLayout(newLayout) {
+  currentLayout = newLayout;
+  Object.entries(LAYOUT_BUTTONS).forEach(([key, btn]) => btn.setAttribute('aria-pressed', String(key === newLayout)));
+  Object.entries(LAYOUT_PANELS).forEach(([key, panel]) => { panel.hidden = key !== newLayout; });
+  // Tischtyp gilt für alle außer Gitter (dort fest Einzeltisch)
+  paramsDeskType.hidden = newLayout === 'gitter';
+  activeLayoutLabel.innerHTML = 'Aktuell gewählt: <strong>' + LAYOUT_DISPLAY_NAMES[newLayout] + '</strong>';
+}
+layoutReihen.addEventListener('click', () => setLayout('reihen'));
+layoutUform.addEventListener('click', () => setLayout('uform'));
+layoutGruppen.addEventListener('click', () => setLayout('gruppentische'));
+layoutSchmetterling.addEventListener('click', () => setLayout('schmetterling'));
+layoutGitter.addEventListener('click', () => setLayout('gitter'));
+layoutDoppelU.addEventListener('click', () => setLayout('doppelu'));
 
-  if (layout === 'uform') {
-    const armLength = Math.max(2, Math.ceil(deskCount / 4));
-    const baseWidth = Math.max(1, deskCount - armLength * 2);
-    const cols = baseWidth + 2;
-    const rows = armLength + 1;
-    const full = [];
-    for (let r = 1; r <= armLength; r++) full.push({ col: 1, row: r });
-    for (let c = 1; c <= baseWidth; c++) full.push({ col: c + 1, row: armLength + 1 });
-    for (let r = armLength; r >= 1; r--) full.push({ col: cols, row: r });
-    return { cols, rows, positions: full.slice(0, deskCount) };
-  }
+// ---- Tischtyp-Umschalter ----
+function setDeskType(newType) {
+  deskType = newType;
+  deskTypeSingle.setAttribute('aria-pressed', String(newType === 'single'));
+  deskTypeDouble.setAttribute('aria-pressed', String(newType === 'double'));
+}
+deskTypeSingle.addEventListener('click', () => setDeskType('single'));
+deskTypeDouble.addEventListener('click', () => setDeskType('double'));
 
-  // Gruppentische: Zweier-Inseln (4 Plätze) im Raster
-  const podCols = Math.max(1, Math.ceil(Math.sqrt(Math.ceil(deskCount / 2))));
+// ---- Gruppentische: Anzahl-Gruppen / Personen-pro-Gruppe Umschalter ----
+function setGruppenMode(newMode) {
+  gruppenMode = newMode;
+  gruppenModeCount.setAttribute('aria-pressed', String(newMode === 'count'));
+  gruppenModeSize.setAttribute('aria-pressed', String(newMode === 'size'));
+  gruppenAnzahlLabel.textContent = newMode === 'count' ? 'Anzahl Gruppen' : 'Personen pro Gruppe';
+}
+gruppenModeCount.addEventListener('click', () => setGruppenMode('count'));
+gruppenModeSize.addEventListener('click', () => setGruppenMode('size'));
+
+// ---- Positions-Generatoren (liefern nur {col,row}-Listen, keine Namen/Sitze) ----
+function generateReihenPositions(rows, perRow) {
   const positions = [];
-  let n = 0, pod = 0;
-  while (n < deskCount) {
-    const podRow = Math.floor(pod / podCols);
-    const podCol = pod % podCols;
-    positions.push({ col: podCol * 3 + 1, row: podRow * 2 + 1 }); n++;
-    if (n < deskCount) { positions.push({ col: podCol * 3 + 2, row: podRow * 2 + 1 }); n++; }
-    pod++;
+  for (let r = 1; r <= rows; r++) {
+    for (let c = 1; c <= perRow; c++) positions.push({ col: c, row: r });
   }
-  const rows = (Math.floor((pod - 1) / podCols) + 1) * 2;
-  return { cols: podCols * 3, rows, positions };
+  return positions;
+}
+
+function generateUformPositions(leftLen, rightLen, breite, mitte) {
+  const totalCols = breite + 2;
+  const bottomRow = Math.max(leftLen, rightLen, 0) + 1;
+  const positions = [];
+  for (let r = 1; r <= leftLen; r++) positions.push({ col: 1, row: r });
+  for (let r = 1; r <= rightLen; r++) positions.push({ col: totalCols, row: r });
+  for (let c = 1; c <= breite; c++) positions.push({ col: c + 1, row: bottomRow });
+
+  let placed = 0, midRow = 1;
+  while (placed < mitte) {
+    for (let c = 2; c < totalCols && placed < mitte; c++) {
+      positions.push({ col: c, row: midRow });
+      placed++;
+    }
+    midRow++;
+  }
+  return positions;
+}
+
+function generateDoppelUPositions(outerLeft, outerRight, outerBreite, innerLeft, innerRight, innerBreite) {
+  const outer = generateUformPositions(outerLeft, outerRight, outerBreite, 0);
+  const gap = 2;
+  const inner = generateUformPositions(innerLeft, innerRight, innerBreite, 0)
+    .map(p => ({ col: p.col + gap, row: p.row }));
+  return [...outer, ...inner];
+}
+
+function generateSchmetterlingPositions(spineLen, armLen) {
+  const positions = [];
+  const midRow = Math.ceil(spineLen / 2);
+  const prongRows = [1, midRow, spineLen].filter((r, i, arr) => arr.indexOf(r) === i);
+  const totalCols = armLen * 2 + 2;
+
+  // Linkes E: Spine links (col 1), Arme zeigen nach rechts
+  for (let r = 1; r <= spineLen; r++) positions.push({ col: 1, row: r });
+  prongRows.forEach(r => {
+    for (let c = 2; c <= armLen + 1; c++) positions.push({ col: c, row: r });
+  });
+
+  // Rechtes gespiegeltes E: Spine rechts (col totalCols), Arme zeigen nach links
+  for (let r = 1; r <= spineLen; r++) positions.push({ col: totalCols, row: r });
+  prongRows.forEach(r => {
+    for (let c = totalCols - 1; c >= totalCols - armLen; c--) positions.push({ col: c, row: r });
+  });
+
+  return positions;
+}
+
+function computeGroupSizes(totalNames, groupsCount) {
+  const base = Math.floor(totalNames / groupsCount);
+  const rem = totalNames % groupsCount;
+  const sizes = [];
+  for (let i = 0; i < groupsCount; i++) sizes.push(base + (i < rem ? 1 : 0));
+  return sizes.filter(s => s > 0);
+}
+
+function generateGruppentischePositions(groupSizes, seatsPerDesk) {
+  const positions = [];
+  let podCol = 1;
+  let podRowBase = 1;
+  const maxColBeforeWrap = GRID_COLS - 1;
+
+  groupSizes.forEach(size => {
+    const deskCount = Math.ceil(size / seatsPerDesk);
+    let placed = 0;
+    let localRow = podRowBase;
+    while (placed < deskCount) {
+      for (let c = 0; c < 2 && placed < deskCount; c++) {
+        positions.push({ col: podCol + c, row: localRow });
+        placed++;
+      }
+      localRow++;
+    }
+    podCol += 3;
+    if (podCol > maxColBeforeWrap) { podCol = 1; podRowBase += 3; }
+  });
+
+  return positions;
+}
+
+function makeDesks(positions, seatsPerDesk) {
+  return positions.map((p, i) => ({
+    id: 'd' + i,
+    col: p.col,
+    row: p.row,
+    rotation: 0,
+    seats: Array(seatsPerDesk).fill(null)
+  }));
+}
+
+// ---- Layout erzeugen ----
+function generateLayout() {
+  const effectiveDeskType = currentLayout === 'gitter' ? 'single' : deskType;
+  const seatsPerDesk = effectiveDeskType === 'single' ? 1 : 2;
+
+  if (currentLayout === 'gruppentische' && useExistingDraw.checked) {
+    if (!lastGroups || lastGroups.length === 0) {
+      seatingHint.textContent = 'Noch keine Auslosung vorhanden. Erst unter "Gruppen auslosen" Teams bilden.';
+      return;
+    }
+    buildFromExistingDraw(seatsPerDesk);
+    return;
+  }
+
+  let positions;
+  if (currentLayout === 'reihen') {
+    positions = generateReihenPositions(intval(reihenAnzahlReihen, 4), intval(reihenTischeProReihe, 3));
+  } else if (currentLayout === 'uform') {
+    positions = generateUformPositions(
+      intvalMin0(uformLinks), intvalMin0(uformRechts), intval(uformBreite, 4), intvalMin0(uformMitte)
+    );
+  } else if (currentLayout === 'doppelu') {
+    positions = generateDoppelUPositions(
+      intvalMin0(dopUOuterLinks), intvalMin0(dopUOuterRechts), intval(dopUOuterBreite, 6),
+      intvalMin0(dopUInnerLinks), intvalMin0(dopUInnerRechts), intval(dopUInnerBreite, 2)
+    );
+  } else if (currentLayout === 'schmetterling') {
+    positions = generateSchmetterlingPositions(intval(schmetterlingSpine, 5), intval(schmetterlingArm, 3));
+  } else if (currentLayout === 'gitter') {
+    positions = generateReihenPositions(intval(gitterAnzahlReihen, 5), intval(gitterProReihe, 5));
+  } else {
+    const names = getNames();
+    if (names.length === 0) {
+      seatingHint.textContent = 'Erst Namen in "Gruppen verwalten" eintragen.';
+      return;
+    }
+    const n = intval(gruppenAnzahl, 4);
+    const groupsCount = gruppenMode === 'count' ? Math.max(1, n) : Math.max(1, Math.ceil(names.length / n));
+    const groupSizes = computeGroupSizes(names.length, groupsCount);
+    positions = generateGruppentischePositions(groupSizes, seatsPerDesk);
+  }
+
+  desks = makeDesks(positions, seatsPerDesk);
+  selectedSeat = null;
+  renderRoom();
+  queueSeatingSave();
+  seatingHint.textContent = 'Layout erzeugt. Jetzt "Namen zuteilen" klicken oder Tische manuell anpassen.';
+}
+generateLayoutBtn.addEventListener('click', generateLayout);
+
+function buildFromExistingDraw(seatsPerDesk) {
+  const groupSizes = lastGroups.map(g => g.length);
+  const positions = generateGruppentischePositions(groupSizes, seatsPerDesk);
+  desks = makeDesks(positions, seatsPerDesk);
+
+  let deskCursor = 0;
+  lastGroups.forEach(group => {
+    const deskCount = Math.ceil(group.length / seatsPerDesk);
+    const groupDesks = desks.slice(deskCursor, deskCursor + deskCount);
+    let namePointer = 0;
+    groupDesks.forEach(d => {
+      for (let si = 0; si < d.seats.length; si++) {
+        d.seats[si] = group[namePointer++] || null;
+      }
+    });
+    deskCursor += deskCount;
+  });
+
+  selectedSeat = null;
+  renderRoom();
+  queueSeatingSave();
+  seatingHint.textContent = 'Sitzplan aus der bestehenden Auslosung erstellt (jede Tischgruppe = ein ausgelostes Team).';
 }
 
 // ---- Regeln: Auswahl-Listen & Chips ----
@@ -137,21 +347,40 @@ addRuleBtn.addEventListener('click', () => {
   queueSeatingSave();
 });
 
-// ---- Sitzplan vorschlagen (Los + Regelprüfung) ----
+// ---- Namen zuteilen (Los + Regelprüfung), füllt NUR die bestehenden Tische ----
+function deskHasConflict(desk) {
+  for (let i = 0; i < desk.seats.length; i++) {
+    for (let j = i + 1; j < desk.seats.length; j++) {
+      const a = desk.seats[i], b = desk.seats[j];
+      if (a && b && notTogetherPairs.some(p => (p[0] === a && p[1] === b) || (p[0] === b && p[1] === a))) return true;
+    }
+  }
+  return false;
+}
+
+function checkConflictsOnly() {
+  const idxs = [];
+  desks.forEach((d, di) => { if (deskHasConflict(d)) idxs.push(di); });
+  return idxs;
+}
+
 function proposeSeating() {
+  if (desks.length === 0) {
+    seatingHint.textContent = 'Erst ein Layout erzeugen, bevor Namen zugeteilt werden.';
+    return;
+  }
   const names = getNames();
   if (names.length === 0) {
-    seatingHint.textContent = 'Erst Namen im Feld oben eintragen.';
+    seatingHint.textContent = 'Erst Namen in "Gruppen verwalten" eintragen.';
     return;
   }
 
-  const deskCount = Math.ceil(names.length / 2);
-  const layoutData = computeDeskPositions(seatingLayout, deskCount);
-  const desks = layoutData.positions.map((p, i) => ({ id: 'd' + i, col: p.col, row: p.row, seats: [null, null] }));
+  desks.forEach(d => { d.seats = d.seats.map(() => null); });
 
+  // Reihenfolge = Erzeugungsreihenfolge der Tische (bei Reihen/U-Form/Schmetterling = vorne
+  // zuerst, bei Gruppentischen = tischgruppenweise zusammenhängend)
   let flatSeats = [];
-  desks.forEach((d, di) => { flatSeats.push({ di, si: 0 }); flatSeats.push({ di, si: 1 }); });
-  flatSeats.sort((a, b) => desks[a.di].row - desks[b.di].row);
+  desks.forEach((d, di) => { d.seats.forEach((_, si) => flatSeats.push({ di, si })); });
 
   const frontNames = shuffle(names.filter(n => frontRowSet.has(n)));
   const otherNames = shuffle(names.filter(n => !frontRowSet.has(n)));
@@ -161,55 +390,137 @@ function proposeSeating() {
   frontNames.forEach(place);
   otherNames.forEach(place);
 
-  function findConflictDeskIndexes() {
-    const idxs = [];
-    desks.forEach((d, di) => {
-      const [a, b] = d.seats;
-      if (a && b && notTogetherPairs.some(p => (p[0] === a && p[1] === b) || (p[0] === b && p[1] === a))) idxs.push(di);
-    });
-    return idxs;
-  }
-
   let tries = 0;
-  let conflicts = findConflictDeskIndexes();
+  let conflicts = checkConflictsOnly();
   while (conflicts.length > 0 && tries < 300) {
     const di = conflicts[0];
-    const si = Math.random() < 0.5 ? 0 : 1;
+    const desk = desks[di];
+    const si = Math.floor(Math.random() * desk.seats.length);
     const otherDi = Math.floor(Math.random() * desks.length);
-    const otherSi = Math.random() < 0.5 ? 0 : 1;
-    const tmp = desks[di].seats[si];
-    desks[di].seats[si] = desks[otherDi].seats[otherSi];
-    desks[otherDi].seats[otherSi] = tmp;
-    conflicts = findConflictDeskIndexes();
+    const otherDesk = desks[otherDi];
+    const otherSi = Math.floor(Math.random() * otherDesk.seats.length);
+    const tmp = desk.seats[si];
+    desk.seats[si] = otherDesk.seats[otherSi];
+    otherDesk.seats[otherSi] = tmp;
+    conflicts = checkConflictsOnly();
     tries++;
   }
 
-  currentDesks = desks;
   selectedSeat = null;
-  renderSeating(conflicts);
+  renderRoom();
   seatingHint.textContent = conflicts.length > 0
     ? conflicts.length + ' Tisch(e) verletzen eine "nicht zusammen"-Regel (rot markiert) – bitte manuell tauschen.'
-    : 'Sitzplan erstellt. Zwei Plätze antippen, um sie zu tauschen.';
+    : 'Namen zugeteilt. Zwei Plätze antippen, um sie zu tauschen.';
   queueSeatingSave();
 }
 proposeSeatingBtn.addEventListener('click', proposeSeating);
 
-// ---- Rendering ----
-function renderSeating(conflictIdxs) {
-  conflictIdxs = conflictIdxs || [];
-  deskGrid.innerHTML = '';
-  if (currentDesks.length === 0) return;
+// ---- Bearbeitungsmodus: Tische per Klick hinzufügen/entfernen/drehen ----
+function setEditMode(on) {
+  editMode = on;
+  seatingRoom.classList.toggle('edit-mode', on);
+  toggleEditModeBtn.textContent = on ? 'Fertig' : 'Tische bearbeiten';
+  editModeHint.style.display = on ? 'block' : 'none';
+  selectedSeat = null;
+  renderRoom();
+}
+editModeHint.style.display = 'none';
+toggleEditModeBtn.addEventListener('click', () => setEditMode(!editMode));
 
-  const maxCol = Math.max(...currentDesks.map(d => d.col));
-  const maxRow = Math.max(...currentDesks.map(d => d.row));
-  deskGrid.style.gridTemplateColumns = 'repeat(' + maxCol + ', minmax(90px, 1fr))';
+function findDeskAt(col, row) {
+  return desks.find(d => d.col === col && d.row === row);
+}
+
+function handleGridCellClick(col, row) {
+  const desk = findDeskAt(col, row);
+  if (desk) {
+    const occupied = desk.seats.some(Boolean);
+    if (occupied && !confirm('Dieser Tisch ist besetzt (' + desk.seats.filter(Boolean).join(', ') + '). Trotzdem entfernen?')) return;
+    desks = desks.filter(d => d !== desk);
+  } else {
+    const seatsPerDesk = (currentLayout === 'gitter' ? 'single' : deskType) === 'single' ? 1 : 2;
+    desks.push({ id: 'd' + Date.now() + Math.random().toString(16).slice(2), col, row, rotation: 0, seats: Array(seatsPerDesk).fill(null) });
+  }
+  renderRoom();
+  queueSeatingSave();
+}
+
+function rotateDesk(desk) {
+  desk.rotation = (desk.rotation + 90) % 360;
+  renderRoom();
+  queueSeatingSave();
+}
+
+// ---- Rendering ----
+function renderRoom() {
+  if (editMode) {
+    renderGridEditor();
+  } else {
+    renderSeatingNormal();
+  }
+}
+
+function renderGridEditor() {
+  deskGrid.innerHTML = '';
+  deskGrid.style.gridTemplateColumns = 'repeat(' + GRID_COLS + ', minmax(48px, 1fr))';
+  deskGrid.style.gridTemplateRows = 'repeat(' + GRID_ROWS + ', auto)';
+
+  for (let row = 1; row <= GRID_ROWS; row++) {
+    for (let col = 1; col <= GRID_COLS; col++) {
+      const desk = findDeskAt(col, row);
+      const cell = document.createElement('div');
+      cell.className = 'grid-cell' + (desk ? ' has-desk' : ' empty-cell');
+      cell.style.gridColumn = col;
+      cell.style.gridRow = row;
+
+      if (desk) {
+        cell.style.setProperty('--rot', desk.rotation + 'deg');
+        const occupied = desk.seats.some(Boolean);
+        const iconSpan = document.createElement('span');
+        iconSpan.className = 'grid-cell-icon';
+        iconSpan.textContent = occupied ? '🪑✎' : '🪑';
+        cell.appendChild(iconSpan);
+        cell.title = 'Klicken zum Entfernen';
+        cell.addEventListener('click', () => handleGridCellClick(col, row));
+
+        const rotateBtn = document.createElement('button');
+        rotateBtn.type = 'button';
+        rotateBtn.className = 'rotate-btn';
+        rotateBtn.textContent = '↻';
+        rotateBtn.title = 'Tisch drehen';
+        rotateBtn.addEventListener('click', (e) => { e.stopPropagation(); rotateDesk(desk); });
+        cell.appendChild(rotateBtn);
+      } else {
+        cell.textContent = '+';
+        cell.title = 'Klicken zum Platzieren';
+        cell.addEventListener('click', () => handleGridCellClick(col, row));
+      }
+      deskGrid.appendChild(cell);
+    }
+  }
+}
+
+function renderSeatingNormal() {
+  deskGrid.innerHTML = '';
+  if (desks.length === 0) {
+    deskGrid.style.gridTemplateColumns = '';
+    deskGrid.style.gridTemplateRows = '';
+    return;
+  }
+
+  const maxCol = Math.max(...desks.map(d => d.col));
+  const maxRow = Math.max(...desks.map(d => d.row));
+  deskGrid.style.gridTemplateColumns = 'repeat(' + maxCol + ', minmax(80px, 1fr))';
   deskGrid.style.gridTemplateRows = 'repeat(' + maxRow + ', auto)';
 
-  currentDesks.forEach((desk, di) => {
+  const conflictIdxs = checkConflictsOnly();
+
+  desks.forEach((desk, di) => {
     const deskEl = document.createElement('div');
-    deskEl.className = 'desk' + (conflictIdxs.includes(di) ? ' conflict' : '');
+    deskEl.className = 'desk' + (conflictIdxs.includes(di) ? ' conflict' : '') + (desk.seats.length === 1 ? ' single-seat' : '');
     deskEl.style.gridColumn = desk.col;
     deskEl.style.gridRow = desk.row;
+    if (desk.rotation) deskEl.style.setProperty('--rot', desk.rotation + 'deg');
 
     desk.seats.forEach((name, si) => {
       const seatEl = document.createElement('div');
@@ -235,7 +546,7 @@ function markSelectedSeat() {
 
 function handleSeatClick(deskIdx, seatIdx) {
   if (!selectedSeat) {
-    if (!currentDesks[deskIdx].seats[seatIdx]) return; // leere Plätze nicht als Start wählbar
+    if (!desks[deskIdx].seats[seatIdx]) return;
     selectedSeat = { deskIdx, seatIdx };
     markSelectedSeat();
     return;
@@ -245,36 +556,33 @@ function handleSeatClick(deskIdx, seatIdx) {
     markSelectedSeat();
     return;
   }
-  const a = currentDesks[selectedSeat.deskIdx].seats[selectedSeat.seatIdx];
-  const b = currentDesks[deskIdx].seats[seatIdx];
-  currentDesks[selectedSeat.deskIdx].seats[selectedSeat.seatIdx] = b;
-  currentDesks[deskIdx].seats[seatIdx] = a;
+  const a = desks[selectedSeat.deskIdx].seats[selectedSeat.seatIdx];
+  const b = desks[deskIdx].seats[seatIdx];
+  desks[selectedSeat.deskIdx].seats[selectedSeat.seatIdx] = b;
+  desks[deskIdx].seats[seatIdx] = a;
   selectedSeat = null;
-  renderSeating(checkConflictsOnly());
+  renderRoom();
   queueSeatingSave();
-}
-
-function checkConflictsOnly() {
-  const idxs = [];
-  currentDesks.forEach((d, di) => {
-    const [a, b] = d.seats;
-    if (a && b && notTogetherPairs.some(p => (p[0] === a && p[1] === b) || (p[0] === b && p[1] === a))) idxs.push(di);
-  });
-  return idxs;
 }
 
 // ---- Persistenz (pro Gruppe) ----
 export function loadSeatingFromGroup(g) {
   const s = (g && g.seating) || null;
-  seatingLayout = (s && s.layout) || 'reihen';
-  setLayout(seatingLayout);
-  currentDesks = (s && s.desks) || [];
+  currentLayout = (s && s.layout) || 'reihen';
+  deskType = (s && s.deskType) || 'double';
+  setLayout(currentLayout);
+  setDeskType(deskType);
+  desks = ((s && s.desks) || []).map(d => ({ rotation: 0, ...d, seats: d.seats || [null, null] }));
   frontRowSet = new Set((s && s.frontRow) || []);
   notTogetherPairs = (s && s.notTogether) || [];
   selectedSeat = null;
+  editMode = false;
+  seatingRoom.classList.remove('edit-mode');
+  toggleEditModeBtn.textContent = 'Tische bearbeiten';
+  editModeHint.style.display = 'none';
   refreshRuleOptions();
-  renderSeating(checkConflictsOnly());
-  seatingHint.textContent = currentDesks.length > 0
+  renderRoom();
+  seatingHint.textContent = desks.length > 0
     ? 'Gespeicherter Sitzplan geladen.'
     : 'Noch kein Sitzplan erstellt.';
 }
@@ -286,8 +594,9 @@ function queueSeatingSave() {
   clearTimeout(seatingSaveTimer);
   seatingSaveTimer = setTimeout(() => {
     set(ref(db, 'groups/' + activeGroupId + '/seating'), {
-      layout: seatingLayout,
-      desks: currentDesks,
+      layout: currentLayout,
+      deskType: deskType,
+      desks: desks,
       frontRow: Array.from(frontRowSet),
       notTogether: notTogetherPairs,
       updatedAt: Date.now()
@@ -299,8 +608,8 @@ function queueSeatingSave() {
 
 // ---- PDF-Export (Drucken-Dialog) ----
 exportPdfBtn.addEventListener('click', () => {
-  if (currentDesks.length === 0) {
-    seatingHint.textContent = 'Erst einen Sitzplan vorschlagen, bevor du exportierst.';
+  if (desks.length === 0) {
+    seatingHint.textContent = 'Erst einen Sitzplan erstellen, bevor du exportierst.';
     return;
   }
   const groupTitle = activeGroupName.textContent || 'Sitzplan';
@@ -313,8 +622,8 @@ exportPdfBtn.addEventListener('click', () => {
   meta.className = 'print-meta';
   meta.textContent = 'Erstellt am ' + dateStr;
 
-  const roomClone = document.getElementById('seatingRoom').cloneNode(true);
-  roomClone.querySelectorAll('.seat').forEach(el => el.replaceWith(el.cloneNode(true))); // Klick-Handler entfernen
+  const roomClone = seatingRoom.cloneNode(true);
+  roomClone.querySelectorAll('.seat, .grid-cell, .rotate-btn').forEach(el => el.replaceWith(el.cloneNode(true))); // Klick-Handler entfernen
 
   printRoot.append(heading, meta, roomClone);
   document.body.classList.add('print-mode');
@@ -328,3 +637,5 @@ window.addEventListener('afterprint', () => {
 // Namensänderungen -> Regel-Auswahllisten aktuell halten
 namesEl.addEventListener('input', refreshRuleOptions);
 refreshRuleOptions();
+setGruppenMode('count');
+setDeskType('double');
