@@ -747,7 +747,7 @@
   }
 
   /* ---------- Sitzplan ---------- */
-  .layout-toggle { max-width: 480px; }
+  .layout-toggle { max-width: 100%; flex-wrap: wrap; }
 
   .layout-params {
     display: flex;
@@ -759,6 +759,7 @@
     border: 1.5px solid var(--card-border);
     border-radius: 12px;
   }
+  .layout-params.is-hidden { display: none !important; }
   .param-field {
     display: flex;
     flex-direction: column;
@@ -779,10 +780,6 @@
     outline-offset: 1px;
   }
   #useExistingDrawRow { flex-basis: 100%; padding: 4px 0 0; }
-
-  .seating-room-wrap { overflow-x: auto; }
-
-  .desk-grid { min-width: max-content; }
 
   .grid-cell {
     display: flex;
@@ -809,11 +806,35 @@
   .grid-cell.has-desk {
     border: 1.5px solid var(--card-border);
     background: #fff;
+    position: relative;
   }
   .grid-cell.has-desk:hover {
     border-color: var(--red-pen);
     background: #fdf1ef;
   }
+  .grid-cell-icon {
+    display: inline-block;
+    transform: rotate(var(--rot, 0deg));
+    transition: transform 0.15s ease;
+  }
+  .rotate-btn {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 18px;
+    height: 18px;
+    font-size: 0.75rem;
+    line-height: 1;
+    border: none;
+    border-radius: 5px;
+    background: rgba(216,74,59,0.14);
+    color: var(--red-pen-dark);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .rotate-btn:hover { background: rgba(216,74,59,0.28); }
 
   .seating-room.edit-mode {
     border-color: var(--red-pen);
@@ -917,12 +938,19 @@
   .seating-actions .draw-btn { flex: 1 1 220px; margin-top: 0; }
   .seating-actions .btn-ghost { flex: 0 0 auto; }
 
+  .seating-room-wrap {
+    overflow-x: auto;
+    border-radius: 14px;
+  }
   .seating-room {
     margin-top: 20px;
     background: #fbfaf5;
     border: 1.5px solid var(--card-border);
     border-radius: 14px;
     padding: 20px;
+    display: inline-block;
+    min-width: 100%;
+    box-sizing: border-box;
   }
   .board-bar {
     text-align: center;
@@ -940,6 +968,8 @@
     display: grid;
     gap: 10px;
     justify-content: center;
+    width: max-content;
+    margin: 0 auto;
   }
   .desk {
     display: flex;
@@ -948,7 +978,16 @@
     border: 1.5px solid var(--card-border);
     background: #fff;
     min-width: 110px;
+    align-self: start;
+    justify-self: start;
   }
+  .desk.single-seat { min-width: 56px; }
+  .desk.vertical {
+    flex-direction: column;
+    min-width: 56px;
+    min-height: 110px;
+  }
+  .desk.vertical.single-seat { min-height: 56px; }
   .desk.conflict { border-color: var(--red-pen); box-shadow: 0 0 0 2px rgba(216,74,59,0.25); }
   .seat {
     flex: 1;
@@ -965,6 +1004,11 @@
     border-right: 1.5px dashed var(--card-border);
     word-break: break-word;
   }
+  .desk.vertical .seat {
+    border-right: none;
+    border-bottom: 1.5px dashed var(--card-border);
+  }
+  .desk.vertical .seat:last-child { border-bottom: none; }
   .seat:last-child { border-right: none; }
   .seat.empty { color: var(--ink-soft); font-weight: 400; font-style: italic; cursor: default; }
   .seat.front-marked { background: #fdf6e0; }

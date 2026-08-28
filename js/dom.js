@@ -68,7 +68,6 @@ export const layoutUform = document.getElementById('layoutUform');
 export const layoutGruppen = document.getElementById('layoutGruppen');
 export const layoutSchmetterling = document.getElementById('layoutSchmetterling');
 export const layoutGitter = document.getElementById('layoutGitter');
-export const layoutDoppelU = document.getElementById('layoutDoppelU');
 
 export const paramsDeskType = document.getElementById('paramsDeskType');
 export const deskTypeSingle = document.getElementById('deskTypeSingle');
@@ -79,7 +78,6 @@ export const paramsUform = document.getElementById('paramsUform');
 export const paramsGruppentische = document.getElementById('paramsGruppentische');
 export const paramsSchmetterling = document.getElementById('paramsSchmetterling');
 export const paramsGitter = document.getElementById('paramsGitter');
-export const paramsDoppelU = document.getElementById('paramsDoppelU');
 
 export const reihenAnzahlReihen = document.getElementById('reihenAnzahlReihen');
 export const reihenTischeProReihe = document.getElementById('reihenTischeProReihe');
@@ -92,16 +90,11 @@ export const gruppenModeSize = document.getElementById('gruppenModeSize');
 export const gruppenAnzahl = document.getElementById('gruppenAnzahl');
 export const gruppenAnzahlLabel = document.getElementById('gruppenAnzahlLabel');
 export const useExistingDraw = document.getElementById('useExistingDraw');
-export const schmetterlingSpine = document.getElementById('schmetterlingSpine');
-export const schmetterlingArm = document.getElementById('schmetterlingArm');
+export const schmetterlingReihen = document.getElementById('schmetterlingReihen');
+export const schmetterlingFluegel = document.getElementById('schmetterlingFluegel');
+export const schmetterlingMitte = document.getElementById('schmetterlingMitte');
 export const gitterAnzahlReihen = document.getElementById('gitterAnzahlReihen');
 export const gitterProReihe = document.getElementById('gitterProReihe');
-export const dopUOuterLinks = document.getElementById('dopUOuterLinks');
-export const dopUOuterRechts = document.getElementById('dopUOuterRechts');
-export const dopUOuterBreite = document.getElementById('dopUOuterBreite');
-export const dopUInnerLinks = document.getElementById('dopUInnerLinks');
-export const dopUInnerRechts = document.getElementById('dopUInnerRechts');
-export const dopUInnerBreite = document.getElementById('dopUInnerBreite');
 
 export const generateLayoutBtn = document.getElementById('generateLayoutBtn');
 export const activeLayoutLabel = document.getElementById('activeLayoutLabel');

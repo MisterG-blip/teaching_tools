@@ -125,7 +125,6 @@
           <button type="button" class="layout-btn" id="layoutGruppen" aria-pressed="false">Gruppentische</button>
           <button type="button" class="layout-btn" id="layoutSchmetterling" aria-pressed="false">Schmetterling</button>
           <button type="button" class="layout-btn" id="layoutGitter" aria-pressed="false">Gitter</button>
-          <button type="button" class="layout-btn" id="layoutDoppelU" aria-pressed="false">Doppel-U</button>
         </div>
 
         <div class="layout-params" id="paramsDeskType">
@@ -149,7 +148,7 @@
           </div>
         </div>
 
-        <div class="layout-params" id="paramsUform" hidden>
+        <div class="layout-params is-hidden" id="paramsUform">
           <div class="param-field">
             <label class="field-label" for="uformLinks">Länge linker Arm</label>
             <input type="number" id="uformLinks" value="3" min="0">
@@ -168,7 +167,7 @@
           </div>
         </div>
 
-        <div class="layout-params" id="paramsGruppentische" hidden>
+        <div class="layout-params is-hidden" id="paramsGruppentische">
           <div class="param-field">
             <label class="field-label" id="gruppenModeLabel">Einteilung nach</label>
             <div class="mode-toggle" role="group" aria-labelledby="gruppenModeLabel">
@@ -186,18 +185,22 @@
           </label>
         </div>
 
-        <div class="layout-params" id="paramsSchmetterling" hidden>
+        <div class="layout-params is-hidden" id="paramsSchmetterling">
           <div class="param-field">
-            <label class="field-label" for="schmetterlingSpine">Spinelänge (Reihen)</label>
-            <input type="number" id="schmetterlingSpine" value="5" min="3">
+            <label class="field-label" for="schmetterlingReihen">Anzahl Hauptreihen</label>
+            <input type="number" id="schmetterlingReihen" value="3" min="1">
           </div>
           <div class="param-field">
-            <label class="field-label" for="schmetterlingArm">Armlänge (Tische)</label>
-            <input type="number" id="schmetterlingArm" value="3" min="1">
+            <label class="field-label" for="schmetterlingFluegel">Tische pro Flügel</label>
+            <input type="number" id="schmetterlingFluegel" value="3" min="0">
+          </div>
+          <div class="param-field">
+            <label class="field-label" for="schmetterlingMitte">Tische in der Mitte (hinten)</label>
+            <input type="number" id="schmetterlingMitte" value="0" min="0">
           </div>
         </div>
 
-        <div class="layout-params" id="paramsGitter" hidden>
+        <div class="layout-params is-hidden" id="paramsGitter">
           <div class="param-field">
             <label class="field-label" for="gitterAnzahlReihen">Anzahl Reihen</label>
             <input type="number" id="gitterAnzahlReihen" value="5" min="1">
@@ -207,35 +210,6 @@
             <input type="number" id="gitterProReihe" value="5" min="1">
           </div>
           <p class="hint" style="flex-basis:100%; margin:0;">Gitter nutzt automatisch Einzeltische.</p>
-        </div>
-
-        <div class="layout-params" id="paramsDoppelU" hidden>
-          <p class="rules-label" style="flex-basis:100%; margin:0 0 4px;">Äußeres U</p>
-          <div class="param-field">
-            <label class="field-label" for="dopUOuterLinks">Länge linker Arm</label>
-            <input type="number" id="dopUOuterLinks" value="4" min="0">
-          </div>
-          <div class="param-field">
-            <label class="field-label" for="dopUOuterRechts">Länge rechter Arm</label>
-            <input type="number" id="dopUOuterRechts" value="4" min="0">
-          </div>
-          <div class="param-field">
-            <label class="field-label" for="dopUOuterBreite">Breite</label>
-            <input type="number" id="dopUOuterBreite" value="6" min="1">
-          </div>
-          <p class="rules-label" style="flex-basis:100%; margin:12px 0 4px;">Inneres U</p>
-          <div class="param-field">
-            <label class="field-label" for="dopUInnerLinks">Länge linker Arm</label>
-            <input type="number" id="dopUInnerLinks" value="2" min="0">
-          </div>
-          <div class="param-field">
-            <label class="field-label" for="dopUInnerRechts">Länge rechter Arm</label>
-            <input type="number" id="dopUInnerRechts" value="2" min="0">
-          </div>
-          <div class="param-field">
-            <label class="field-label" for="dopUInnerBreite">Breite</label>
-            <input type="number" id="dopUInnerBreite" value="2" min="1">
-          </div>
         </div>
 
         <p class="hint" id="activeLayoutLabel">Aktuell gewählt: <strong>Reihen</strong></p>

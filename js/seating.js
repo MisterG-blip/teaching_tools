@@ -1,7 +1,7 @@
 // ============================================================================
 // MODULE: Seating
 // PURPOSE: Sitzplan-Raster (Reihen / U-Form / Gruppentische / Schmetterling /
-//          Gitter / Doppel-U) mit echten Parametern erzeugen, Tischtyp
+//          Gitter) mit echten Parametern erzeugen, Tischtyp
 //          (Einzel-/Doppeltisch), manuelles Hinzufügen/Entfernen/Drehen von
 //          Tischen per Klick, Regeln, Namenszuteilung, Speichern, PDF-Export.
 // ============================================================================
@@ -12,15 +12,14 @@ import { getNames, shuffle } from './utils.js';
 import { activeGroupId } from './groups.js';
 import { lastGroups } from './draw.js';
 import {
-  layoutReihen, layoutUform, layoutGruppen, layoutSchmetterling, layoutGitter, layoutDoppelU,
+  layoutReihen, layoutUform, layoutGruppen, layoutSchmetterling, layoutGitter,
   paramsDeskType, deskTypeSingle, deskTypeDouble,
-  paramsReihen, paramsUform, paramsGruppentische, paramsSchmetterling, paramsGitter, paramsDoppelU,
+  paramsReihen, paramsUform, paramsGruppentische, paramsSchmetterling, paramsGitter,
   reihenAnzahlReihen, reihenTischeProReihe,
   uformLinks, uformRechts, uformBreite, uformMitte,
   gruppenModeCount, gruppenModeSize, gruppenAnzahl, gruppenAnzahlLabel, useExistingDraw,
-  schmetterlingSpine, schmetterlingArm,
+  schmetterlingReihen, schmetterlingFluegel, schmetterlingMitte,
   gitterAnzahlReihen, gitterProReihe,
-  dopUOuterLinks, dopUOuterRechts, dopUOuterBreite, dopUInnerLinks, dopUInnerRechts, dopUInnerBreite,
   generateLayoutBtn, activeLayoutLabel, toggleEditModeBtn, editModeHint, proposeSeatingBtn, exportPdfBtn,
   seatingHint, seatingSaveIndicator, seatingRoom, deskGrid,
   frontRowList, ruleNameA, ruleNameB, addRuleBtn, ruleList, printRoot,
@@ -35,16 +34,14 @@ const LAYOUT_PANELS = {
   uform: paramsUform,
   gruppentische: paramsGruppentische,
   schmetterling: paramsSchmetterling,
-  gitter: paramsGitter,
-  doppelu: paramsDoppelU
+  gitter: paramsGitter
 };
 const LAYOUT_BUTTONS = {
   reihen: layoutReihen,
   uform: layoutUform,
   gruppentische: layoutGruppen,
   schmetterling: layoutSchmetterling,
-  gitter: layoutGitter,
-  doppelu: layoutDoppelU
+  gitter: layoutGitter
 };
 
 let currentLayout = 'reihen';
@@ -71,17 +68,16 @@ const LAYOUT_DISPLAY_NAMES = {
   uform: 'U-Form',
   gruppentische: 'Gruppentische',
   schmetterling: 'Schmetterling',
-  gitter: 'Gitter',
-  doppelu: 'Doppel-U'
+  gitter: 'Gitter'
 };
 
 // ---- Layout-Auswahl: welches Parameter-Panel ist sichtbar ----
 function setLayout(newLayout) {
   currentLayout = newLayout;
   Object.entries(LAYOUT_BUTTONS).forEach(([key, btn]) => btn.setAttribute('aria-pressed', String(key === newLayout)));
-  Object.entries(LAYOUT_PANELS).forEach(([key, panel]) => { panel.hidden = key !== newLayout; });
+  Object.entries(LAYOUT_PANELS).forEach(([key, panel]) => { panel.classList.toggle('is-hidden', key !== newLayout); });
   // Tischtyp gilt für alle außer Gitter (dort fest Einzeltisch)
-  paramsDeskType.hidden = newLayout === 'gitter';
+  paramsDeskType.classList.toggle('is-hidden', newLayout === 'gitter');
   activeLayoutLabel.innerHTML = 'Aktuell gewählt: <strong>' + LAYOUT_DISPLAY_NAMES[newLayout] + '</strong>';
 }
 layoutReihen.addEventListener('click', () => setLayout('reihen'));
@@ -89,7 +85,6 @@ layoutUform.addEventListener('click', () => setLayout('uform'));
 layoutGruppen.addEventListener('click', () => setLayout('gruppentische'));
 layoutSchmetterling.addEventListener('click', () => setLayout('schmetterling'));
 layoutGitter.addEventListener('click', () => setLayout('gitter'));
-layoutDoppelU.addEventListener('click', () => setLayout('doppelu'));
 
 // ---- Tischtyp-Umschalter ----
 function setDeskType(newType) {
@@ -123,14 +118,22 @@ function generateUformPositions(leftLen, rightLen, breite, mitte) {
   const totalCols = breite + 2;
   const bottomRow = Math.max(leftLen, rightLen, 0) + 1;
   const positions = [];
-  for (let r = 1; r <= leftLen; r++) positions.push({ col: 1, row: r });
-  for (let r = 1; r <= rightLen; r++) positions.push({ col: totalCols, row: r });
-  for (let c = 1; c <= breite; c++) positions.push({ col: c + 1, row: bottomRow });
+  // Linker Arm: Tische drehen sich nach rechts (zur Mitte hin)
+  for (let r = 1; r <= leftLen; r++) positions.push({ col: 1, row: r, rotation: 90 });
+  // Rechter Arm: Tische drehen sich nach links (zur Mitte hin)
+  for (let r = 1; r <= rightLen; r++) positions.push({ col: totalCols, row: r, rotation: 270 });
+  // Bodenreihe: normal ausgerichtet (Richtung Tafel)
+  for (let c = 1; c <= breite; c++) positions.push({ col: c + 1, row: bottomRow, rotation: 0 });
 
+  // Tische in der Mitte: zeilenweise mittig und symmetrisch platzieren
+  const interiorWidth = totalCols - 2; // Spalten 2..totalCols-1
   let placed = 0, midRow = 1;
   while (placed < mitte) {
-    for (let c = 2; c < totalCols && placed < mitte; c++) {
-      positions.push({ col: c, row: midRow });
+    const remaining = mitte - placed;
+    const rowCount = Math.min(remaining, interiorWidth);
+    const startCol = 2 + Math.floor((interiorWidth - rowCount) / 2);
+    for (let i = 0; i < rowCount; i++) {
+      positions.push({ col: startCol + i, row: midRow, rotation: 0 });
       placed++;
     }
     midRow++;
@@ -138,32 +141,22 @@ function generateUformPositions(leftLen, rightLen, breite, mitte) {
   return positions;
 }
 
-function generateDoppelUPositions(outerLeft, outerRight, outerBreite, innerLeft, innerRight, innerBreite) {
-  const outer = generateUformPositions(outerLeft, outerRight, outerBreite, 0);
-  const gap = 2;
-  const inner = generateUformPositions(innerLeft, innerRight, innerBreite, 0)
-    .map(p => ({ col: p.col + gap, row: p.row }));
-  return [...outer, ...inner];
-}
-
-function generateSchmetterlingPositions(spineLen, armLen) {
+function generateSchmetterlingPositions(mainRows, wingCount, mitte) {
   const positions = [];
-  const midRow = Math.ceil(spineLen / 2);
-  const prongRows = [1, midRow, spineLen].filter((r, i, arr) => arr.indexOf(r) === i);
-  const totalCols = armLen * 2 + 2;
-
-  // Linkes E: Spine links (col 1), Arme zeigen nach rechts
-  for (let r = 1; r <= spineLen; r++) positions.push({ col: 1, row: r });
-  prongRows.forEach(r => {
-    for (let c = 2; c <= armLen + 1; c++) positions.push({ col: c, row: r });
-  });
-
-  // Rechtes gespiegeltes E: Spine rechts (col totalCols), Arme zeigen nach links
-  for (let r = 1; r <= spineLen; r++) positions.push({ col: totalCols, row: r });
-  prongRows.forEach(r => {
-    for (let c = totalCols - 1; c >= totalCols - armLen; c--) positions.push({ col: c, row: r });
-  });
-
+  // Hauptblock: 2 Spalten (links/rechts) mit Mittelgang dazwischen (Spalte 3, leer)
+  for (let r = 1; r <= mainRows; r++) {
+    positions.push({ col: 2, row: r, rotation: 0 });
+    positions.push({ col: 4, row: r, rotation: 0 });
+  }
+  // Flügel: linker Flügel dreht sich nach rechts (zur Mitte), rechter nach links
+  for (let r = 1; r <= wingCount; r++) {
+    positions.push({ col: 1, row: r, rotation: 90 });
+    positions.push({ col: 5, row: r, rotation: 270 });
+  }
+  // Tische in der Mitte: hinten im Gang, hinter dem Hauptblock
+  for (let i = 0; i < mitte; i++) {
+    positions.push({ col: 3, row: mainRows + 1 + i, rotation: 0 });
+  }
   return positions;
 }
 
@@ -177,24 +170,33 @@ function computeGroupSizes(totalNames, groupsCount) {
 
 function generateGruppentischePositions(groupSizes, seatsPerDesk) {
   const positions = [];
-  let podCol = 1;
-  let podRowBase = 1;
-  const maxColBeforeWrap = GRID_COLS - 1;
+  const podsPerRow = 2; // Räume sind meist schmaler als lang: max. 2 Tischgruppen nebeneinander,
+                         // weitere Gruppen wachsen als zusätzliche Zeilen-Bänke nach unten statt in die Breite.
+  const deskCounts = groupSizes.map(size => Math.ceil(size / seatsPerDesk));
+  let rowCursor = 1;
 
-  groupSizes.forEach(size => {
-    const deskCount = Math.ceil(size / seatsPerDesk);
-    let placed = 0;
-    let localRow = podRowBase;
-    while (placed < deskCount) {
-      for (let c = 0; c < 2 && placed < deskCount; c++) {
-        positions.push({ col: podCol + c, row: localRow });
-        placed++;
+  for (let bandStart = 0; bandStart < deskCounts.length; bandStart += podsPerRow) {
+    const bandCounts = deskCounts.slice(bandStart, bandStart + podsPerRow);
+    // Zeilen je Pod = 2 Tische pro Pod-Zeile -> ceil(deskCount/2); Bank-Höhe = höchster Pod in dieser Bank,
+    // damit unterschiedlich große Gruppen nebeneinander nicht in die nächste Bank hineinragen.
+    const rowsPerPod = bandCounts.map(c => Math.ceil(c / 2));
+    const bandHeight = Math.max(...rowsPerPod);
+
+    bandCounts.forEach((deskCount, i) => {
+      const podCol = i * 3 + 1;
+      let placed = 0;
+      let localRow = rowCursor;
+      while (placed < deskCount) {
+        for (let c = 0; c < 2 && placed < deskCount; c++) {
+          positions.push({ col: podCol + c, row: localRow });
+          placed++;
+        }
+        localRow++;
       }
-      localRow++;
-    }
-    podCol += 3;
-    if (podCol > maxColBeforeWrap) { podCol = 1; podRowBase += 3; }
-  });
+    });
+
+    rowCursor += bandHeight + 1; // +1 Zeile Abstand zwischen den Bänken
+  }
 
   return positions;
 }
@@ -204,7 +206,7 @@ function makeDesks(positions, seatsPerDesk) {
     id: 'd' + i,
     col: p.col,
     row: p.row,
-    rotation: 0,
+    rotation: p.rotation || 0,
     seats: Array(seatsPerDesk).fill(null)
   }));
 }
@@ -230,13 +232,10 @@ function generateLayout() {
     positions = generateUformPositions(
       intvalMin0(uformLinks), intvalMin0(uformRechts), intval(uformBreite, 4), intvalMin0(uformMitte)
     );
-  } else if (currentLayout === 'doppelu') {
-    positions = generateDoppelUPositions(
-      intvalMin0(dopUOuterLinks), intvalMin0(dopUOuterRechts), intval(dopUOuterBreite, 6),
-      intvalMin0(dopUInnerLinks), intvalMin0(dopUInnerRechts), intval(dopUInnerBreite, 2)
-    );
   } else if (currentLayout === 'schmetterling') {
-    positions = generateSchmetterlingPositions(intval(schmetterlingSpine, 5), intval(schmetterlingArm, 3));
+    positions = generateSchmetterlingPositions(
+      intval(schmetterlingReihen, 3), Math.max(0, parseInt(schmetterlingFluegel.value, 10) || 0), Math.max(0, parseInt(schmetterlingMitte.value, 10) || 0)
+    );
   } else if (currentLayout === 'gitter') {
     positions = generateReihenPositions(intval(gitterAnzahlReihen, 5), intval(gitterProReihe, 5));
   } else {
@@ -462,11 +461,17 @@ function renderRoom() {
 
 function renderGridEditor() {
   deskGrid.innerHTML = '';
-  deskGrid.style.gridTemplateColumns = 'repeat(' + GRID_COLS + ', minmax(48px, 1fr))';
-  deskGrid.style.gridTemplateRows = 'repeat(' + GRID_ROWS + ', auto)';
 
-  for (let row = 1; row <= GRID_ROWS; row++) {
-    for (let col = 1; col <= GRID_COLS; col++) {
+  const maxDeskCol = desks.length ? Math.max(...desks.map(d => d.col)) : 0;
+  const maxDeskRow = desks.length ? Math.max(...desks.map(d => d.row)) : 0;
+  const cols = Math.max(GRID_COLS, maxDeskCol + 3);
+  const rows = Math.max(GRID_ROWS, maxDeskRow + 3);
+
+  deskGrid.style.gridTemplateColumns = 'repeat(' + cols + ', minmax(48px, 1fr))';
+  deskGrid.style.gridTemplateRows = 'repeat(' + rows + ', auto)';
+
+  for (let row = 1; row <= rows; row++) {
+    for (let col = 1; col <= cols; col++) {
       const desk = findDeskAt(col, row);
       const cell = document.createElement('div');
       cell.className = 'grid-cell' + (desk ? ' has-desk' : ' empty-cell');
@@ -516,11 +521,14 @@ function renderSeatingNormal() {
   const conflictIdxs = checkConflictsOnly();
 
   desks.forEach((desk, di) => {
+    const isVertical = desk.rotation === 90 || desk.rotation === 270;
     const deskEl = document.createElement('div');
-    deskEl.className = 'desk' + (conflictIdxs.includes(di) ? ' conflict' : '') + (desk.seats.length === 1 ? ' single-seat' : '');
+    deskEl.className = 'desk'
+      + (conflictIdxs.includes(di) ? ' conflict' : '')
+      + (desk.seats.length === 1 ? ' single-seat' : '')
+      + (isVertical ? ' vertical' : '');
     deskEl.style.gridColumn = desk.col;
     deskEl.style.gridRow = desk.row;
-    if (desk.rotation) deskEl.style.setProperty('--rot', desk.rotation + 'deg');
 
     desk.seats.forEach((name, si) => {
       const seatEl = document.createElement('div');
