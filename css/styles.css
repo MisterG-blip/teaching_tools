@@ -1021,7 +1021,18 @@
     body.print-mode { background: #fff; }
     #printRoot h2 { font-family:'Caveat',cursive; font-size: 1.8rem; margin: 0 0 4px; }
     #printRoot .print-meta { font-size: 0.85rem; color: #555; margin-bottom: 16px; }
-    @page { size: landscape; margin: 14mm; }
+    /* Seitengröße wird dynamisch per JS gesetzt (siehe #printPageSizeStyle) */
+
+    /* A4-Fläche besser ausnutzen: größere Tische/Schrift als am Bildschirm */
+    #printRoot .seating-room { border: none; background: #fff; padding: 0; width: auto; }
+    #printRoot .desk-grid { gap: 14px; width: max-content; margin: 0 auto; }
+    #printRoot .desk { min-width: 150px; border-width: 2px; }
+    #printRoot .desk.single-seat { min-width: 76px; }
+    #printRoot .desk.vertical { min-width: 76px; min-height: 150px; }
+    #printRoot .desk.vertical.single-seat { min-height: 76px; }
+    #printRoot .seat { font-size: 1.1rem; min-height: 68px; padding: 8px 6px; }
+    #printRoot .board-bar { font-size: 1.5rem; padding: 10px 0; margin: 16px 0; }
+    #printRoot .seat-label-flip { display: inline-block; transform: rotate(180deg); }
   }
 
   @media (max-width: 760px) {

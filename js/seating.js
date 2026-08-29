@@ -20,7 +20,8 @@ import {
   gruppenModeCount, gruppenModeSize, gruppenAnzahl, gruppenAnzahlLabel, useExistingDraw,
   schmetterlingReihen, schmetterlingFluegel, schmetterlingMitte,
   gitterAnzahlReihen, gitterProReihe,
-  generateLayoutBtn, activeLayoutLabel, toggleEditModeBtn, editModeHint, proposeSeatingBtn, exportPdfBtn,
+  generateLayoutBtn, activeLayoutLabel, toggleEditModeBtn, editModeHint, proposeSeatingBtn,
+  exportPdfSchuelerBtn, exportPdfLehrerBtn,
   seatingHint, seatingSaveIndicator, seatingRoom, deskGrid,
   frontRowList, ruleNameA, ruleNameB, addRuleBtn, ruleList, printRoot,
   namesEl, activeGroupName
@@ -615,28 +616,97 @@ function queueSeatingSave() {
 }
 
 // ---- PDF-Export (Drucken-Dialog) ----
-exportPdfBtn.addEventListener('click', () => {
+// ---- PDF-Export: zwei Perspektiven ----
+// Schülersicht: wie im Raum gesehen (Blick zur Tafel, Tafel oben).
+// Lehrersicht: identische Tischanordnung (die Tische stehen ja nicht anders im Raum!) -
+// nur jeder Name einzeln auf den Kopf gestellt. Dreht die Lehrkraft das ausgedruckte
+// Blatt um 180°, landet die gesamte Anordnung UND die Namen gleichzeitig richtig herum,
+// passend zur Perspektive vom Lehrertisch aus.
+function buildPrintRoomElement(desksToRender, upsideDownNames) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'seating-room';
+
+  const board = document.createElement('div');
+  board.className = 'board-bar';
+  board.textContent = 'Tafel';
+
+  const grid = document.createElement('div');
+  grid.className = 'desk-grid';
+
+  if (desksToRender.length > 0) {
+    const maxCol = Math.max(...desksToRender.map(d => d.col));
+    const maxRow = Math.max(...desksToRender.map(d => d.row));
+    grid.style.gridTemplateColumns = 'repeat(' + maxCol + ', minmax(80px, 1fr))';
+    grid.style.gridTemplateRows = 'repeat(' + maxRow + ', auto)';
+
+    desksToRender.forEach(desk => {
+      const isVertical = desk.rotation === 90 || desk.rotation === 270;
+      const deskEl = document.createElement('div');
+      deskEl.className = 'desk' + (desk.seats.length === 1 ? ' single-seat' : '') + (isVertical ? ' vertical' : '');
+      deskEl.style.gridColumn = desk.col;
+      deskEl.style.gridRow = desk.row;
+      desk.seats.forEach(name => {
+        const seatEl = document.createElement('div');
+        seatEl.className = 'seat' + (name ? '' : ' empty');
+        if (name && upsideDownNames) {
+          const label = document.createElement('span');
+          label.className = 'seat-label-flip';
+          label.textContent = name;
+          seatEl.appendChild(label);
+        } else {
+          seatEl.textContent = name || 'frei';
+        }
+        deskEl.appendChild(seatEl);
+      });
+      grid.appendChild(deskEl);
+    });
+  }
+
+  wrapper.append(board, grid);
+  return wrapper;
+}
+
+function setPrintPageOrientation(orientation) {
+  let styleEl = document.getElementById('printPageSizeStyle');
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = 'printPageSizeStyle';
+    document.head.appendChild(styleEl);
+  }
+  styleEl.textContent = '@media print { @page { size: A4 ' + orientation + '; margin: 12mm; } }';
+}
+
+function exportSeatingPdf(view) {
   if (desks.length === 0) {
     seatingHint.textContent = 'Erst einen Sitzplan erstellen, bevor du exportierst.';
     return;
   }
   const groupTitle = activeGroupName.textContent || 'Sitzplan';
   const dateStr = new Date().toLocaleDateString('de-DE');
-  printRoot.innerHTML = '';
+  const isLehrer = view === 'lehrer';
 
+  const maxCol = Math.max(...desks.map(d => d.col));
+  const maxRow = Math.max(...desks.map(d => d.row));
+  setPrintPageOrientation(maxCol >= maxRow ? 'landscape' : 'portrait');
+
+  printRoot.innerHTML = '';
   const heading = document.createElement('h2');
-  heading.textContent = groupTitle + ' – Sitzplan';
+  heading.textContent = groupTitle + ' – Sitzplan (' + (isLehrer ? 'Lehrertisch' : 'Blick zur Tafel') + ')';
   const meta = document.createElement('p');
   meta.className = 'print-meta';
-  meta.textContent = 'Erstellt am ' + dateStr;
+  meta.textContent = 'Erstellt am ' + dateStr
+    + (isLehrer ? ' · Ausdruck nach dem Drucken um 180° drehen – dann liegen Anordnung und Namen richtig zum Lehrertisch.' : ' · so wie man vom eigenen Platz zur Tafel schaut');
 
-  const roomClone = seatingRoom.cloneNode(true);
-  roomClone.querySelectorAll('.seat, .grid-cell, .rotate-btn').forEach(el => el.replaceWith(el.cloneNode(true))); // Klick-Handler entfernen
+  const roomEl = buildPrintRoomElement(desks, isLehrer);
+  printRoot.append(heading, meta, roomEl);
 
-  printRoot.append(heading, meta, roomClone);
   document.body.classList.add('print-mode');
   window.print();
-});
+}
+
+exportPdfSchuelerBtn.addEventListener('click', () => exportSeatingPdf('schueler'));
+exportPdfLehrerBtn.addEventListener('click', () => exportSeatingPdf('lehrer'));
+
 window.addEventListener('afterprint', () => {
   document.body.classList.remove('print-mode');
   printRoot.innerHTML = '';
