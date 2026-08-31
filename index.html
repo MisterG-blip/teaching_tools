@@ -98,15 +98,84 @@
         <textarea id="names" placeholder="Ein Name pro Zeile, z. B.&#10;Mia&#10;Ben&#10;Lea&#10;Finn&#10;Emma&#10;Noah"></textarea>
         <p class="hint" id="countHint">0 Namen erkannt</p>
       </div>
+
+      <div class="workspace" id="accountSettingsPanel">
+        <div class="workspace-head">
+          <h2>⚙️ Einstellungen</h2>
+          <span class="save-indicator" id="settingsSaveIndicator"></span>
+        </div>
+        <p class="workspace-sub">Gilt accountweit für alle deine Klassen, z. B. für Ferientermine bei den Klassendiensten.</p>
+        <div class="param-field">
+          <label class="field-label" for="accountBundesland">Bundesland</label>
+          <select id="accountBundesland">
+            <option value="BW">Baden-Württemberg</option>
+            <option value="BY">Bayern</option>
+            <option value="BE">Berlin</option>
+            <option value="BB">Brandenburg</option>
+            <option value="HB">Bremen</option>
+            <option value="HH" selected>Hamburg</option>
+            <option value="HE">Hessen</option>
+            <option value="MV">Mecklenburg-Vorpommern</option>
+            <option value="NI">Niedersachsen</option>
+            <option value="NW">Nordrhein-Westfalen</option>
+            <option value="RP">Rheinland-Pfalz</option>
+            <option value="SL">Saarland</option>
+            <option value="SN">Sachsen</option>
+            <option value="ST">Sachsen-Anhalt</option>
+            <option value="SH">Schleswig-Holstein</option>
+            <option value="TH">Thüringen</option>
+          </select>
+        </div>
+      </div>
     </section>
 
     <!-- ===================== Organisation: Klassendienste ===================== -->
     <section class="view is-hidden" id="view-duties" data-view="duties">
-      <div class="workspace">
+      <div class="workspace" id="dutiesWorkspace">
         <div class="workspace-head">
           <h2>🧹 Klassendienste</h2>
+          <span class="save-indicator" id="dutiesSaveIndicator"></span>
         </div>
-        <p class="workspace-sub">Dieser Bereich ist als Nächstes dran und noch nicht gebaut.</p>
+        <p class="workspace-sub">Dienste eintragen, Rotation erzeugen – jede:r kommt reihum mit jedem Dienst dran, Ferien werden automatisch übersprungen.</p>
+
+        <div class="layout-params">
+          <div class="param-field">
+            <label class="field-label">Bundesland (für Ferientermine)</label>
+            <p class="hint" id="dutiesBundeslandDisplay" style="margin:0; min-width:200px;">Hamburg</p>
+          </div>
+          <div class="param-field">
+            <label class="field-label" for="dutiesIntervalWeeks">Rotation alle ... Wochen</label>
+            <input type="number" id="dutiesIntervalWeeks" value="4" min="1">
+          </div>
+          <div class="param-field">
+            <label class="field-label" for="dutiesStartDate">Start</label>
+            <input type="date" id="dutiesStartDate">
+          </div>
+          <div class="param-field">
+            <label class="field-label" for="dutiesEndDate">Ende</label>
+            <input type="date" id="dutiesEndDate">
+          </div>
+        </div>
+        <p class="hint">Bundesland gilt für alle Klassen und wird unter „Gruppen verwalten" → Einstellungen geändert. Ferientermine aktuell hinterlegt für: Baden-Württemberg, Bayern, Berlin, Brandenburg, Bremen, Hamburg, Hessen, Mecklenburg-Vorpommern, Niedersachsen (2026/2027).</p>
+
+        <div class="rules-panel-static">
+          <p class="rules-label">Dienste</p>
+          <div class="rule-builder">
+            <input type="text" id="dutyNameInput" placeholder="Name, z. B. Tafeldienst" class="duty-text-input">
+            <input type="number" id="dutyCountInput" placeholder="Anzahl SuS" value="1" min="1" class="duty-count-input">
+            <button type="button" class="btn btn-ghost" id="addDutyBtn">Hinzufügen</button>
+          </div>
+          <ul class="rule-list" id="dutyList"></ul>
+        </div>
+
+        <div class="seating-actions">
+          <button type="button" class="draw-btn" id="generateDutiesBtn">Rotation erzeugen</button>
+          <button type="button" class="btn btn-ghost" id="exportDutiesPdfBtn">Als PDF exportieren</button>
+        </div>
+
+        <p class="hint" id="dutiesHint">Noch keine Rotation erzeugt.</p>
+
+        <div class="duties-table-wrap" id="dutiesTableWrap"></div>
       </div>
     </section>
 

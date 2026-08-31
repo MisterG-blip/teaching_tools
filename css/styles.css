@@ -781,6 +781,56 @@
   }
   #useExistingDrawRow { flex-basis: 100%; padding: 4px 0 0; }
 
+  .rules-panel-static {
+    margin-top: 20px;
+    border: 1.5px solid var(--card-border);
+    border-radius: 12px;
+    padding: 16px;
+    background: #fbfaf5;
+  }
+  .duty-text-input, .duty-count-input {
+    font-family: inherit;
+    font-size: 0.86rem;
+    color: var(--ink);
+    background: var(--field-bg);
+    border: 1.5px solid var(--field-border);
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+  .duty-text-input { flex: 1; min-width: 140px; }
+  .duty-count-input { width: 100px; }
+  .duty-text-input:focus-visible, .duty-count-input:focus-visible {
+    outline: 2.5px solid var(--red-pen);
+    outline-offset: 1px;
+  }
+
+  .duties-table-wrap { margin-top: 20px; overflow-x: auto; }
+  .duties-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+  .duties-table th, .duties-table td {
+    border: 1.5px solid var(--card-border);
+    padding: 8px 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+  .duties-table th {
+    background: var(--chip-bg);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .duties-table td.period-cell { white-space: nowrap; font-weight: 600; }
+  .duties-table .duty-names { display: flex; flex-wrap: wrap; gap: 4px; }
+  .duties-table .duty-names span {
+    background: #fff;
+    border: 1px solid var(--card-border);
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 0.8rem;
+  }
+
   .grid-cell {
     display: flex;
     align-items: center;

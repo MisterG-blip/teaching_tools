@@ -11,6 +11,7 @@ import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.8.0/fi
 import { auth, db } from './firebase-init.js';
 import { resetCalled } from './roll-call.js';
 import { loadSeatingFromGroup } from './seating.js';
+import { loadDutiesFromGroup } from './duties.js';
 import {
   accountStatus, authForm, loggedInRow,
   groupList, newGroupBtn, sidebarHint,
@@ -120,6 +121,7 @@ function selectGroup(id) {
   resultsEl.innerHTML = '';
   resetCalled();
   loadSeatingFromGroup(g);
+  loadDutiesFromGroup(g);
   renderGroupList();
   updateGroupPickerHint();
 }

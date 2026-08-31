@@ -62,6 +62,25 @@ export const callBtn = document.getElementById('callBtn');
 export const resetCalledBtn = document.getElementById('resetCalledBtn');
 export const calledChips = document.getElementById('calledChips');
 
+// Konto-Einstellungen (accountweit)
+export const accountSettingsPanel = document.getElementById('accountSettingsPanel');
+export const settingsSaveIndicator = document.getElementById('settingsSaveIndicator');
+export const accountBundesland = document.getElementById('accountBundesland');
+
+// Klassendienste
+export const dutiesSaveIndicator = document.getElementById('dutiesSaveIndicator');
+export const dutiesBundeslandDisplay = document.getElementById('dutiesBundeslandDisplay');
+export const dutiesIntervalWeeks = document.getElementById('dutiesIntervalWeeks');
+export const dutiesStartDate = document.getElementById('dutiesStartDate');
+export const dutiesEndDate = document.getElementById('dutiesEndDate');
+export const dutyNameInput = document.getElementById('dutyNameInput');
+export const dutyCountInput = document.getElementById('dutyCountInput');
+export const addDutyBtn = document.getElementById('addDutyBtn');
+export const dutyList = document.getElementById('dutyList');
+export const generateDutiesBtn = document.getElementById('generateDutiesBtn');
+export const exportDutiesPdfBtn = document.getElementById('exportDutiesPdfBtn');
+export const dutiesHint = document.getElementById('dutiesHint');
+export const dutiesTableWrap = document.getElementById('dutiesTableWrap');
 // Sitzplan
 export const layoutReihen = document.getElementById('layoutReihen');
 export const layoutUform = document.getElementById('layoutUform');
