@@ -31,6 +31,11 @@ export const sidebarHint = document.getElementById('sidebarHint');
 export const joinCodeInput = document.getElementById('joinCodeInput');
 export const joinGroupBtn = document.getElementById('joinGroupBtn');
 export const joinMessage = document.getElementById('joinMessage');
+export const shareModalOverlay = document.getElementById('shareModalOverlay');
+export const shareModalTitle = document.getElementById('shareModalTitle');
+export const shareModalCode = document.getElementById('shareModalCode');
+export const shareModalCopyBtn = document.getElementById('shareModalCopyBtn');
+export const shareModalClose = document.getElementById('shareModalClose');
 
 // Workspace / Namen
 export const activeGroupName = document.getElementById('activeGroupName');

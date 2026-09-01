@@ -16,6 +16,7 @@ import {
   accountStatus, authForm, loggedInRow,
   groupList, newGroupBtn, sidebarHint,
   joinCodeInput, joinGroupBtn, joinMessage,
+  shareModalOverlay, shareModalTitle, shareModalCode, shareModalCopyBtn, shareModalClose,
   groupSelect, groupPickerHint,
   activeGroupName, workspaceSub, saveIndicator, namesEl, countHint, resultsEl
 } from './dom.js';
@@ -28,6 +29,11 @@ let saveTimer = null;
 function renderGroupList() {
   groupList.innerHTML = '';
   const ids = Object.keys(groups).sort((a, b) => (groups[a].createdAt || 0) - (groups[b].createdAt || 0));
+
+  newGroupBtn.disabled = ids.length >= MAX_GROUPS;
+  newGroupBtn.title = ids.length >= MAX_GROUPS
+    ? 'Maximal ' + MAX_GROUPS + ' Gruppen erreicht'
+    : 'Neue Gruppe anlegen';
 
   if (ids.length === 0) {
     sidebarHint.textContent = auth && auth.currentUser
@@ -133,9 +139,17 @@ function generateJoinCode() {
   return code;
 }
 
+const MAX_GROUPS = 10;
+
 function createGroup() {
   const user = auth && auth.currentUser;
   if (!user) return;
+
+  if (Object.keys(groups).length >= MAX_GROUPS) {
+    alert('Du hast bereits ' + MAX_GROUPS + ' Gruppen. Lösche erst eine bestehende Gruppe, bevor du eine neue anlegst.');
+    return;
+  }
+
   const name = prompt('Name der neuen Gruppe (z. B. Klasse 5a):');
   if (!name || !name.trim()) return;
 
@@ -192,16 +206,39 @@ function deleteOrLeaveGroup(id, isOwner) {
   }
 }
 
+function openShareModal(groupName, code) {
+  shareModalTitle.textContent = 'Gruppe teilen: ' + groupName;
+  shareModalCode.textContent = code;
+  shareModalCopyBtn.textContent = 'Code kopieren';
+  shareModalOverlay.classList.remove('is-hidden');
+}
+function closeShareModal() {
+  shareModalOverlay.classList.add('is-hidden');
+}
+
 function shareGroup(id) {
   const g = groups[id];
   if (!g) return;
-  const code = g.joinCode;
-  if (code) {
-    alert('Beitritts-Code für "' + g.name + '":\n\n' + code + '\n\nDiese/r Kolleg:in trägt den Code links unter "Gruppe beitreten" ein und hat danach vollen Zugriff auf diese Gruppe.');
+  if (g.joinCode) {
+    openShareModal(g.name || 'Ohne Namen', g.joinCode);
   } else {
     alert('Für diese Gruppe existiert noch kein Code. Bitte kurz neu laden und erneut versuchen.');
   }
 }
+
+shareModalClose.addEventListener('click', closeShareModal);
+shareModalOverlay.addEventListener('click', (e) => {
+  if (e.target === shareModalOverlay) closeShareModal();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !shareModalOverlay.classList.contains('is-hidden')) closeShareModal();
+});
+shareModalCopyBtn.addEventListener('click', () => {
+  navigator.clipboard.writeText(shareModalCode.textContent).then(() => {
+    shareModalCopyBtn.textContent = 'Kopiert!';
+    setTimeout(() => { shareModalCopyBtn.textContent = 'Code kopieren'; }, 1500);
+  });
+});
 
 newGroupBtn.addEventListener('click', createGroup);
 
