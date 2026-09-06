@@ -101,10 +101,15 @@
 
       <div class="workspace" id="accountSettingsPanel">
         <div class="workspace-head">
-          <h2>⚙️ Einstellungen</h2>
+          <h2>⚙️ Account verwalten</h2>
           <span class="save-indicator" id="settingsSaveIndicator"></span>
         </div>
         <p class="workspace-sub">Gilt accountweit für alle deine Klassen, z. B. für Ferientermine bei den Klassendiensten.</p>
+        <div class="param-field">
+          <label class="field-label" for="accountDisplayName">Anzeigename</label>
+          <input type="text" id="accountDisplayName" placeholder="z. B. Frau Meyer" maxlength="40">
+          <p class="hint" style="margin:4px 0 0;">So erscheinst du für Kolleg:innen in geteilten Gruppen, statt einer kryptischen ID.</p>
+        </div>
         <div class="param-field">
           <label class="field-label" for="accountBundesland">Bundesland</label>
           <select id="accountBundesland">
@@ -125,6 +130,13 @@
             <option value="SH">Schleswig-Holstein</option>
             <option value="TH">Thüringen</option>
           </select>
+        </div>
+
+        <div class="danger-zone">
+          <p class="rules-label" style="color:var(--red-pen-dark);">Konto löschen</p>
+          <p class="hint">Löscht dein Konto und alle Gruppen, in denen du die einzige Person bist, unwiderruflich. Gruppen, die du mit anderen teilst, musst du vorher einzeln auflösen oder verlassen.</p>
+          <button type="button" class="btn btn-ghost btn-danger" id="deleteAccountBtn">Konto endgültig löschen</button>
+          <p class="hint" id="deleteAccountHint"></p>
         </div>
       </div>
     </section>
@@ -412,6 +424,11 @@
     <p class="workspace-sub">Diese/r Kolleg:in trägt den Code unter „Gruppe beitreten" ein und hat danach vollen Zugriff auf diese Gruppe.</p>
     <div class="share-code-display" id="shareModalCode">ABC123</div>
     <button type="button" class="draw-btn" id="shareModalCopyBtn">Code kopieren</button>
+
+    <div class="share-members-block">
+      <p class="rules-label" style="text-align:left; margin:18px 0 8px;">Geteilt mit</p>
+      <ul class="member-list" id="shareModalMemberList"></ul>
+    </div>
   </div>
 </div>
 

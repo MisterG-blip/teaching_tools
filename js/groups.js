@@ -12,6 +12,7 @@ import { auth, db } from './firebase-init.js';
 import { resetCalled } from './roll-call.js';
 import { loadSeatingFromGroup } from './seating.js';
 import { loadDutiesFromGroup } from './duties.js';
+import { userDisplayName } from './settings.js';
 import {
   accountStatus, authForm, loggedInRow,
   groupList, newGroupBtn, sidebarHint,
@@ -21,7 +22,7 @@ import {
   activeGroupName, workspaceSub, saveIndicator, namesEl, countHint, resultsEl
 } from './dom.js';
 
-let groups = {}; // { groupId: { name, names, ownerUid, joinCode, members, seating, ... } }
+export let groups = {}; // { groupId: { name, names, ownerUid, joinCode, members, seating, ... } }
 export let activeGroupId = null;
 let saveTimer = null;
 
@@ -130,6 +131,27 @@ function selectGroup(id) {
   loadDutiesFromGroup(g);
   renderGroupList();
   updateGroupPickerHint();
+  syncMyMemberInfo(id);
+}
+
+// Selbstheilung: aktualisiert den eigenen Mitgliedseintrag mit E-Mail/Anzeigename,
+// falls diese Gruppe noch aus der Zeit vor dieser Funktion stammt (nur "true" statt Objekt)
+// oder der Anzeigename sich seither geändert hat.
+function syncMyMemberInfo(id) {
+  const user = auth && auth.currentUser;
+  const g = groups[id];
+  if (!user || !g || !g.members) return;
+  const existing = g.members[user.uid];
+  const needsUpdate = !existing || typeof existing !== 'object'
+    || existing.email !== (user.email || '')
+    || existing.displayName !== (userDisplayName || '');
+  if (!needsUpdate) return;
+  const joinedAt = (existing && typeof existing === 'object' && existing.joinedAt) || Date.now();
+  set(ref(db, 'groups/' + id + '/members/' + user.uid), {
+    email: user.email || '',
+    displayName: userDisplayName || '',
+    joinedAt
+  });
 }
 
 function generateJoinCode() {
@@ -162,7 +184,7 @@ function createGroup() {
     names: '',
     ownerUid: user.uid,
     joinCode: code,
-    members: { [user.uid]: true },
+    members: { [user.uid]: { email: user.email || '', displayName: userDisplayName || '', joinedAt: Date.now() } },
     createdAt: Date.now(),
     updatedAt: Date.now()
   })
@@ -190,6 +212,7 @@ function deleteOrLeaveGroup(id, isOwner) {
     if (!confirm('Gruppe "' + label + '" für ALLE Mitglieder löschen? Das kann nicht rückgängig gemacht werden.')) return;
     remove(ref(db, 'groups/' + id));
     remove(ref(db, 'userGroups/' + user.uid + '/' + id));
+    if (current && current.joinCode) remove(ref(db, 'groupCodes/' + current.joinCode));
   } else {
     if (!confirm('Gruppe "' + label + '" verlassen? Du verlierst den Zugriff, andere Mitglieder behalten ihn.')) return;
     remove(ref(db, 'groups/' + id + '/members/' + user.uid));
@@ -206,10 +229,48 @@ function deleteOrLeaveGroup(id, isOwner) {
   }
 }
 
-function openShareModal(groupName, code) {
-  shareModalTitle.textContent = 'Gruppe teilen: ' + groupName;
-  shareModalCode.textContent = code;
+function renderShareMemberList(groupId) {
+  const g = groups[groupId];
+  if (!g) return;
+  const myUid = auth && auth.currentUser ? auth.currentUser.uid : null;
+  const isOwner = myUid && g.ownerUid === myUid;
+  const members = g.members || {};
+
+  shareModalMemberList.innerHTML = '';
+  Object.entries(members).forEach(([uid, info]) => {
+    const hasInfo = info && typeof info === 'object';
+    const displayName = hasInfo && info.displayName ? info.displayName : '';
+    const email = hasInfo && info.email ? info.email : '';
+    const label = displayName || email || (uid === myUid ? 'Du (noch kein Anzeigename gesetzt)' : 'Unbekannt (' + uid.slice(0, 8) + '…)');
+
+    const li = document.createElement('li');
+    const labelEl = document.createElement('span');
+    labelEl.textContent = label + (uid === g.ownerUid ? ' (Eigentümer:in)' : '') + (uid === myUid && uid !== g.ownerUid ? ' (Du)' : '');
+    li.appendChild(labelEl);
+
+    if (isOwner && uid !== myUid) {
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.textContent = 'Entfernen';
+      removeBtn.addEventListener('click', () => {
+        if (!confirm('„' + label + '" wirklich aus dieser Gruppe entfernen? Die Person verliert sofort den Zugriff.')) return;
+        remove(ref(db, 'groups/' + groupId + '/members/' + uid)).then(() => {
+          renderShareMemberList(groupId);
+        });
+      });
+      li.appendChild(removeBtn);
+    }
+    shareModalMemberList.appendChild(li);
+  });
+}
+
+function openShareModal(groupId) {
+  const g = groups[groupId];
+  if (!g) return;
+  shareModalTitle.textContent = 'Gruppe teilen: ' + (g.name || 'Ohne Namen');
+  shareModalCode.textContent = g.joinCode || '–';
   shareModalCopyBtn.textContent = 'Code kopieren';
+  renderShareMemberList(groupId);
   shareModalOverlay.classList.remove('is-hidden');
 }
 function closeShareModal() {
@@ -220,7 +281,7 @@ function shareGroup(id) {
   const g = groups[id];
   if (!g) return;
   if (g.joinCode) {
-    openShareModal(g.name || 'Ohne Namen', g.joinCode);
+    openShareModal(id);
   } else {
     alert('Für diese Gruppe existiert noch kein Code. Bitte kurz neu laden und erneut versuchen.');
   }
@@ -262,7 +323,7 @@ async function joinGroupByCode() {
       return;
     }
     const groupId = snap.val().groupId;
-    await set(ref(db, 'groups/' + groupId + '/members/' + user.uid), true);
+    await set(ref(db, 'groups/' + groupId + '/members/' + user.uid), { email: user.email || '', displayName: userDisplayName || '', joinedAt: Date.now() });
     await set(ref(db, 'userGroups/' + user.uid + '/' + groupId), true);
     joinCodeInput.value = '';
     joinMessage.textContent = 'Beigetreten!';
@@ -305,21 +366,31 @@ function attachGroupListener(groupId) {
   if (groupListeners[groupId]) return;
   const user = auth.currentUser;
   const gRef = ref(db, 'groups/' + groupId);
+
+  function cleanupLostAccess() {
+    // Gruppe existiert nicht mehr ODER wir haben keinen Zugriff mehr (z. B. von Owner
+    // entfernt) -> eigenen Index-Eintrag selbst aufräumen (nur die eigene UID darf das).
+    delete groups[groupId];
+    if (user) remove(ref(db, 'userGroups/' + user.uid + '/' + groupId));
+    if (activeGroupId === groupId) {
+      activeGroupId = null;
+      activeGroupName.textContent = 'Ohne Gruppe';
+      namesEl.value = '';
+      namesEl.dispatchEvent(new Event('input'));
+    }
+    renderGroupList();
+  }
+
   onValue(gRef, (snapshot) => {
     if (snapshot.exists()) {
       groups[groupId] = snapshot.val();
+      renderGroupList();
     } else {
-      // Gruppe existiert nicht mehr (z. B. von Owner gelöscht) -> eigenen Index-Eintrag aufräumen
-      delete groups[groupId];
-      if (user) remove(ref(db, 'userGroups/' + user.uid + '/' + groupId));
-      if (activeGroupId === groupId) {
-        activeGroupId = null;
-        activeGroupName.textContent = 'Ohne Gruppe';
-        namesEl.value = '';
-        namesEl.dispatchEvent(new Event('input'));
-      }
+      cleanupLostAccess();
     }
-    renderGroupList();
+  }, () => {
+    // Lesezugriff verweigert (z. B. gerade aus der Gruppe entfernt worden)
+    cleanupLostAccess();
   });
   groupListeners[groupId] = () => off(gRef);
 }

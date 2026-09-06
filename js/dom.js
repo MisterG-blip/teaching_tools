@@ -36,6 +36,7 @@ export const shareModalTitle = document.getElementById('shareModalTitle');
 export const shareModalCode = document.getElementById('shareModalCode');
 export const shareModalCopyBtn = document.getElementById('shareModalCopyBtn');
 export const shareModalClose = document.getElementById('shareModalClose');
+export const shareModalMemberList = document.getElementById('shareModalMemberList');
 
 // Workspace / Namen
 export const activeGroupName = document.getElementById('activeGroupName');
@@ -70,7 +71,10 @@ export const calledChips = document.getElementById('calledChips');
 // Konto-Einstellungen (accountweit)
 export const accountSettingsPanel = document.getElementById('accountSettingsPanel');
 export const settingsSaveIndicator = document.getElementById('settingsSaveIndicator');
+export const accountDisplayName = document.getElementById('accountDisplayName');
 export const accountBundesland = document.getElementById('accountBundesland');
+export const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+export const deleteAccountHint = document.getElementById('deleteAccountHint');
 
 // Klassendienste
 export const dutiesSaveIndicator = document.getElementById('dutiesSaveIndicator');
