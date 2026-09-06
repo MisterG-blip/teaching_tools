@@ -50,6 +50,7 @@
     <button type="button" class="nav-item" data-view="seating">🪑 Sitzplan</button>
 
     <p class="nav-section-label">Verwaltung</p>
+    <button type="button" class="nav-item" data-view="account">👤 Account verwalten</button>
     <button type="button" class="nav-item" data-view="manage">📁 Gruppen verwalten</button>
   </nav>
 
@@ -98,7 +99,10 @@
         <textarea id="names" placeholder="Ein Name pro Zeile, z. B.&#10;Mia&#10;Ben&#10;Lea&#10;Finn&#10;Emma&#10;Noah"></textarea>
         <p class="hint" id="countHint">0 Namen erkannt</p>
       </div>
+    </section>
 
+    <!-- ===================== Account verwalten ===================== -->
+    <section class="view is-hidden" id="view-account" data-view="account">
       <div class="workspace" id="accountSettingsPanel">
         <div class="workspace-head">
           <h2>⚙️ Account verwalten</h2>

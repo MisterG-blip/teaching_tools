@@ -13,9 +13,9 @@ function showView(viewName) {
   navButtons.forEach(btn => {
     btn.classList.toggle('active', btn.dataset.view === viewName);
   });
-  // Die Gruppen-Auswahlleiste braucht man nur außerhalb von "Gruppen verwalten" -
-  // dort gibt es die ausführlichere Liste inklusive Bearbeiten.
-  groupPickerBar.classList.toggle('is-hidden', viewName === 'manage');
+  // Die Gruppen-Auswahlleiste braucht man nur außerhalb von "Gruppen verwalten"
+  // und "Account verwalten" - beides ist nicht an eine bestimmte Gruppe gebunden.
+  groupPickerBar.classList.toggle('is-hidden', viewName === 'manage' || viewName === 'account');
 }
 
 navButtons.forEach(btn => {
