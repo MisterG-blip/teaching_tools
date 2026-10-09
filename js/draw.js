@@ -4,6 +4,7 @@
 // ============================================================================
 
 import { getNames, shuffle } from './utils.js';
+import { playDrawAnimation, prefersReducedMotion } from './draw-animation.js';
 import {
   modeGroupsBtn, modeSizeBtn, numberInput, numberLabel,
   decreaseBtn, increaseBtn, drawBtn, errorBox, resultsEl
@@ -12,6 +13,7 @@ import {
 const pencilColors = ['var(--pencil-1)', 'var(--pencil-2)', 'var(--pencil-3)', 'var(--pencil-4)', 'var(--pencil-5)', 'var(--pencil-6)'];
 let mode = 'groups';
 export let lastGroups = null;
+let activeAnim = null; // laufende Boots-Animation (falls vorhanden)
 
 function setMode(newMode) {
   mode = newMode;
@@ -41,19 +43,37 @@ function buildGroups(names, count) {
 
 function render(gs) {
   lastGroups = gs;
+  if (activeAnim) { activeAnim.cancel(); activeAnim = null; }
   resultsEl.innerHTML = '';
+  const animate = !prefersReducedMotion();
 
   const head = document.createElement('div');
   head.className = 'results-head';
   head.innerHTML = `
     <h3>${gs.length} Gruppen ausgelost</h3>
     <div class="actions">
+      ${animate ? '<button type="button" class="btn btn-ghost" id="skipBtn">Überspringen ⏭</button>' : ''}
       <button type="button" class="btn btn-ghost" id="copyBtn">Ergebnis kopieren</button>
       <button type="button" class="btn btn-ghost" id="reshuffleBtn">Nochmal auslosen</button>
     </div>
   `;
   resultsEl.appendChild(head);
 
+  let stage = null;
+  if (animate) {
+    stage = document.createElement('div');
+    stage.className = 'boat-stage';
+    stage.setAttribute('aria-hidden', 'true');
+    stage.innerHTML = `
+      <div class="boat-wrap">
+        <div class="boat-bob">
+          <div class="boat-kick"><img src="assets/boat.png" alt="" draggable="false"></div>
+        </div>
+      </div>`;
+    resultsEl.appendChild(stage);
+  }
+
+  const entries = [];
   const grid = document.createElement('div');
   grid.className = 'groups-grid';
 
@@ -76,6 +96,10 @@ function render(gs) {
       li.textContent = name;
       li.style.setProperty('--delay', (gi * 0.05 + mi * 0.06) + 's');
       li.style.color = 'var(--text)';
+      if (animate) {
+        li.classList.add('is-pending'); // Platz reservieren, Name kommt per Boot angeflogen
+        entries.push({ el: li, color, group: gi });
+      }
       list.appendChild(li);
     });
     groupEl.appendChild(list);
@@ -85,6 +109,23 @@ function render(gs) {
   resultsEl.appendChild(grid);
   document.getElementById('reshuffleBtn').addEventListener('click', runDraw);
   document.getElementById('copyBtn').addEventListener('click', copyResults);
+
+  if (animate) {
+    const skipBtn = document.getElementById('skipBtn');
+    const startAnim = () => {
+      const anim = playDrawAnimation({
+        stage,
+        entries,
+        onDone: () => { if (skipBtn) skipBtn.remove(); if (activeAnim === anim) activeAnim = null; }
+      });
+      activeAnim = anim;
+      skipBtn.addEventListener('click', () => anim.skip());
+    };
+    // Erst starten, wenn das Boot-Bild geladen ist (sonst stimmt die Startposition nicht)
+    const img = stage.querySelector('img');
+    if (img.complete) startAnim();
+    else { img.addEventListener('load', startAnim, { once: true }); img.addEventListener('error', startAnim, { once: true }); }
+  }
 }
 
 function copyResults() {

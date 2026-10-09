@@ -698,6 +698,58 @@
   @keyframes dealIn { to { opacity: 1; transform: translateY(0); } }
   @media (prefers-reduced-motion: reduce) { .tag { animation: none; opacity: 1; transform: none; } }
 
+  /* ---------- Auslosen-Animation: Boot + Namens-Fontäne ---------- */
+  .boat-stage {
+    --boat-w: clamp(140px, 25vh, 220px);
+    position: relative;
+    overflow: hidden;
+    padding-top: calc(var(--boat-w) * 1.05);
+    margin-bottom: 6px;
+    text-align: center;
+  }
+  .boat-wrap { display: inline-block; width: var(--boat-w); }
+  .boat-bob { animation: boatBob 2.4s ease-in-out infinite alternate; transform-origin: 50% 85%; }
+  .boat-kick { transform-origin: 50% 90%; }
+  .boat-kick img { display: block; width: 100%; height: auto; user-select: none; }
+  @keyframes boatBob {
+    from { transform: translateY(-3px) rotate(-2.2deg); }
+    to   { transform: translateY(4px)  rotate(2.2deg); }
+  }
+
+  .flying-tag {
+    position: absolute;
+    left: 0; top: 0;
+    z-index: 1000;
+    pointer-events: none;
+    will-change: transform, opacity;
+    background: #fff;
+    border: 2px solid var(--card-border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.96rem;
+    font-weight: 600;
+    color: var(--ink);
+    box-shadow: 0 10px 22px rgba(38, 49, 58, 0.22);
+    transform-origin: 50% 50%;
+  }
+  .splash-drop {
+    position: absolute;
+    left: 0; top: 0;
+    z-index: 999;
+    pointer-events: none;
+    border-radius: 50%;
+    background: #8fc4dc;
+  }
+
+  .tag.is-pending { animation: none; opacity: 0; visibility: hidden; transform: none; }
+  .tag.is-instant { animation: none; opacity: 1; transform: none; visibility: visible; }
+  .tag.is-landed { animation: tagLand .35s ease forwards; }
+  @keyframes tagLand {
+    0%   { opacity: 1; transform: scale(1.12); }
+    100% { opacity: 1; transform: none; }
+  }
+
   footer.app-footer {
     text-align: center;
     padding: 26px 20px 40px;
