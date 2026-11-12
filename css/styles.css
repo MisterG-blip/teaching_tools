@@ -1250,3 +1250,211 @@
     padding: 3px 6px;
   }
   .member-list li button:hover { text-decoration: underline; }
+
+
+  /* ---------- Gruppenpuzzle ---------- */
+  .jigsaw-section-title {
+    font-family: 'Caveat', cursive;
+    font-weight: 700;
+    font-size: 1.7rem;
+    margin: 34px 0 2px;
+    color: var(--ink);
+  }
+  .jigsaw-section-sub {
+    margin: 0 0 16px;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+  }
+  .result-group.is-expert { background: #f3f8fc; }
+  .result-group-title small {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin-left: 8px;
+  }
+  .tag.has-pill {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .tag .pill {
+    flex: 0 0 auto;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #fff;
+    padding: 2px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .puzzle-wiggle {
+    display: inline-block;
+    animation: puzzleWiggle 0.9s ease 1;
+  }
+  @keyframes puzzleWiggle {
+    0%   { transform: rotate(0) scale(1); }
+    25%  { transform: rotate(-18deg) scale(1.25); }
+    50%  { transform: rotate(14deg) scale(1.25); }
+    75%  { transform: rotate(-8deg) scale(1.1); }
+    100% { transform: rotate(0) scale(1); }
+  }
+
+  /* ---------- Noten würfeln (Spaßfunktion) ---------- */
+  .fun-note {
+    margin: 16px 0 0;
+    padding: 10px 14px;
+    background: #fff8e1;
+    border: 1.5px dashed var(--pencil-5);
+    border-radius: 10px;
+    font-size: 0.9rem;
+    color: var(--ink);
+  }
+  #gradesResults { margin-top: 40px; }
+
+  .grades-summary {
+    display: none;
+    margin: 0 0 18px;
+    padding: 12px 16px;
+    background: var(--chip-bg);
+    border: 1.5px solid var(--card-border);
+    border-radius: 12px;
+    font-size: 0.95rem;
+    color: var(--ink);
+  }
+  .grades-summary.show { display: block; animation: dealIn 0.35s ease forwards; }
+  .grades-summary strong {
+    font-family: 'Caveat', cursive;
+    font-size: 1.4rem;
+    font-weight: 700;
+  }
+
+  .grades-list {
+    list-style: none;
+    margin: 0;
+    padding: 10px 0 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    gap: 18px 16px;
+  }
+  .grade-card {
+    --grade-color: var(--ink-soft);
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 14px 14px 16px;
+    background: #fbfaf5;
+    border: 1.5px solid var(--card-border);
+    border-left: 6px solid var(--grade-color);
+    border-radius: 14px;
+    transition: border-left-color 0.3s ease;
+  }
+  .grade-body { flex: 1 1 auto; min-width: 0; }
+  .grade-name {
+    font-family: 'Caveat', cursive;
+    font-weight: 700;
+    font-size: 1.55rem;
+    line-height: 1.1;
+    margin: 0 0 4px;
+    color: var(--ink);
+    word-break: break-word;
+  }
+  .grade-comment {
+    margin: 0;
+    font-size: 0.82rem;
+    line-height: 1.4;
+    color: var(--ink-soft);
+    opacity: 1;
+    transition: opacity 0.5s ease 0.15s;
+  }
+  .grade-card.is-rolling .grade-comment { opacity: 0; transition: none; }
+
+  .grade-badge {
+    position: relative;
+    flex: 0 0 auto;
+    width: 72px;
+    height: 72px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--ink);
+    color: #fffdf7;
+    font-family: 'Caveat', cursive;
+    font-weight: 700;
+    font-size: 2.3rem;
+    line-height: 1;
+    box-shadow: inset 0 3px 8px rgba(0,0,0,0.4);
+  }
+  .grade-card.is-landed .grade-badge {
+    background: var(--grade-color);
+    box-shadow: 0 3px 0 rgba(0,0,0,0.18);
+  }
+  .grade-card.is-rolling .grade-badge { animation: gradeShake 0.2s linear infinite; }
+  .grade-card.is-pop .grade-badge { animation: gradePop 0.6s cubic-bezier(0.2, 1.6, 0.4, 1); }
+
+  @keyframes gradeShake {
+    0%   { transform: rotate(-8deg) translateY(0); }
+    25%  { transform: rotate(6deg) translateY(-3px); }
+    50%  { transform: rotate(-5deg) translateY(0); }
+    75%  { transform: rotate(8deg) translateY(-2px); }
+    100% { transform: rotate(-8deg) translateY(0); }
+  }
+  @keyframes gradePop {
+    0%   { transform: scale(0.6) rotate(-20deg); }
+    60%  { transform: scale(1.25) rotate(6deg); }
+    100% { transform: scale(1) rotate(0); }
+  }
+
+  .grade-reroll {
+    position: absolute;
+    top: -12px;
+    right: -8px;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    background: #fff;
+    border: 1.5px solid var(--card-border);
+    border-radius: 50%;
+    font-size: 0.95rem;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    transition: transform 0.15s ease;
+  }
+  .grade-reroll:hover:not(:disabled) { transform: rotate(20deg) scale(1.1); }
+  .grade-reroll:focus-visible { outline: 2.5px solid var(--red-pen); outline-offset: 2px; }
+  .grade-reroll:disabled { cursor: default; animation: dieSpin 0.6s linear infinite; }
+  @keyframes dieSpin { to { transform: rotate(360deg); } }
+
+  .grade-burst {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .grade-burst span {
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-size: 1.15rem;
+    animation: gradeBurst 1s ease-out forwards;
+  }
+  @keyframes gradeBurst {
+    0%   { transform: translate(-50%, -50%) scale(0.4); opacity: 1; }
+    100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.15) rotate(var(--rot)); opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .grade-card.is-rolling .grade-badge,
+    .grade-card.is-pop .grade-badge,
+    .grade-reroll:disabled,
+    .puzzle-wiggle,
+    .grades-summary.show { animation: none; }
+    .grade-burst { display: none; }
+  }

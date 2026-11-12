@@ -8,6 +8,8 @@ import './auth-ui.js';
 import './settings.js';
 import './draw.js';
 import './roll-call.js';
+import './jigsaw.js';
+import './grades.js';
 import './seating.js';
 import './duties.js';
 import './groups.js';

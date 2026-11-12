@@ -43,7 +43,9 @@
   <nav class="main-nav" id="mainNav">
     <p class="nav-section-label">Unterrichtsorganisation</p>
     <button type="button" class="nav-item" data-view="draw">🎲 Gruppen auslosen</button>
+    <button type="button" class="nav-item" data-view="jigsaw">🧩 Gruppenpuzzle</button>
     <button type="button" class="nav-item" data-view="rollcall">🎰 Zufällig aufrufen</button>
+    <button type="button" class="nav-item" data-view="grades">🎓 Noten würfeln</button>
 
     <p class="nav-section-label">Organisation</p>
     <button type="button" class="nav-item" data-view="duties">🧹 Klassendienste</button>
@@ -414,6 +416,74 @@
         </div>
 
         <ul class="called-chips" id="calledChips"></ul>
+      </div>
+    </section>
+
+    <!-- ===================== Unterrichtsorganisation: Gruppenpuzzle ===================== -->
+    <section class="view is-hidden" id="view-jigsaw" data-view="jigsaw">
+      <div class="workspace">
+        <div class="workspace-head">
+          <h2>🧩 Gruppenpuzzle</h2>
+        </div>
+        <p class="workspace-sub">Teilt die gewählte Gruppe zufällig in Stammgruppen ein und mischt sie danach neu in Expertengruppen. Aus jeder Stammgruppe sitzt in jeder Expertengruppe mindestens eine Person.</p>
+
+        <div class="config-row">
+          <div class="field-group">
+            <label class="field-label" for="jigsawHomeCount">Anzahl Stammgruppen</label>
+            <div class="number-field">
+              <button type="button" id="jigsawHomeDecrease" aria-label="Stammgruppen verringern">−</button>
+              <input type="number" id="jigsawHomeCount" value="4" min="2" inputmode="numeric">
+              <button type="button" id="jigsawHomeIncrease" aria-label="Stammgruppen erhöhen">+</button>
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="jigsawExpertCount">Anzahl Expertengruppen</label>
+            <div class="number-field">
+              <button type="button" id="jigsawExpertDecrease" aria-label="Expertengruppen verringern">−</button>
+              <input type="number" id="jigsawExpertCount" value="4" min="2" inputmode="numeric">
+              <button type="button" id="jigsawExpertIncrease" aria-label="Expertengruppen erhöhen">+</button>
+            </div>
+          </div>
+        </div>
+
+        <p class="hint" id="jigsawHint">Noch keine Namen eingetragen.</p>
+        <p class="error" id="jigsawError" role="alert"></p>
+
+        <button type="button" class="draw-btn" id="jigsawBtn">Gruppenpuzzle mischen</button>
+
+        <section id="jigsawResults" aria-live="polite"></section>
+      </div>
+    </section>
+
+    <!-- ===================== Unterrichtsorganisation: Noten würfeln ===================== -->
+    <section class="view is-hidden" id="view-grades" data-view="grades">
+      <div class="workspace">
+        <div class="workspace-head">
+          <h2>🎓 Noten würfeln</h2>
+        </div>
+        <p class="workspace-sub">Jede Person der gewählten Gruppe bekommt eine Note vom Würfel samt einem zusammengewürfelten Kommentar.</p>
+        <p class="fun-note">🎲 <strong>Reiner Spaß!</strong> Die Noten werden ausgewürfelt, haben nichts mit echten Leistungen zu tun und werden nirgends gespeichert.</p>
+
+        <div class="config-row">
+          <div class="field-group">
+            <label class="checkbox-row">
+              <input type="checkbox" id="gradesPlusMinus" checked>
+              Mit + und −
+            </label>
+          </div>
+          <div class="field-group">
+            <label class="checkbox-row">
+              <input type="checkbox" id="gradesComments" checked>
+              Mit Würfel-Kommentar
+            </label>
+          </div>
+        </div>
+
+        <p class="error" id="gradesError" role="alert"></p>
+
+        <button type="button" class="draw-btn" id="gradesBtn">Noten würfeln</button>
+
+        <section id="gradesResults" aria-live="polite"></section>
       </div>
     </section>
   </div>

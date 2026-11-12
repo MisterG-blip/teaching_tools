@@ -68,6 +68,25 @@ export const callBtn = document.getElementById('callBtn');
 export const resetCalledBtn = document.getElementById('resetCalledBtn');
 export const calledChips = document.getElementById('calledChips');
 
+// Gruppenpuzzle
+export const jigsawHomeCount = document.getElementById('jigsawHomeCount');
+export const jigsawHomeDecrease = document.getElementById('jigsawHomeDecrease');
+export const jigsawHomeIncrease = document.getElementById('jigsawHomeIncrease');
+export const jigsawExpertCount = document.getElementById('jigsawExpertCount');
+export const jigsawExpertDecrease = document.getElementById('jigsawExpertDecrease');
+export const jigsawExpertIncrease = document.getElementById('jigsawExpertIncrease');
+export const jigsawHint = document.getElementById('jigsawHint');
+export const jigsawError = document.getElementById('jigsawError');
+export const jigsawBtn = document.getElementById('jigsawBtn');
+export const jigsawResults = document.getElementById('jigsawResults');
+
+// Noten würfeln (Spaßfunktion)
+export const gradesPlusMinus = document.getElementById('gradesPlusMinus');
+export const gradesComments = document.getElementById('gradesComments');
+export const gradesError = document.getElementById('gradesError');
+export const gradesBtn = document.getElementById('gradesBtn');
+export const gradesResults = document.getElementById('gradesResults');
+
 // Konto-Einstellungen (accountweit)
 export const accountSettingsPanel = document.getElementById('accountSettingsPanel');
 export const settingsSaveIndicator = document.getElementById('settingsSaveIndicator');
