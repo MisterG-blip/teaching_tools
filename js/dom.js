@@ -83,6 +83,7 @@ export const jigsawResults = document.getElementById('jigsawResults');
 // Noten würfeln (Spaßfunktion)
 export const gradesPlusMinus = document.getElementById('gradesPlusMinus');
 export const gradesComments = document.getElementById('gradesComments');
+export const gradesExcuses = document.getElementById('gradesExcuses');
 export const gradesError = document.getElementById('gradesError');
 export const gradesBtn = document.getElementById('gradesBtn');
 export const gradesResults = document.getElementById('gradesResults');

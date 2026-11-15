@@ -8,7 +8,7 @@
 import { getNames } from './utils.js';
 import { prefersReducedMotion } from './draw-animation.js';
 import {
-  namesEl, gradesPlusMinus, gradesComments, gradesError, gradesBtn, gradesResults
+  namesEl, gradesPlusMinus, gradesComments, gradesExcuses, gradesError, gradesBtn, gradesResults
 } from './dom.js';
 
 // Farben pro Note: bewusst keine "Warnfarben", damit sich niemand bloßgestellt fühlt
@@ -33,7 +33,25 @@ const PRAISE = [
   "{n} findet verlorene Radiergummis im Blindflug.",
   "{n} lässt Stifte kreiseln wie ein Profi-Jongleur.",
   "{n} sortiert Gummibärchen mit beeindruckender Ausdauer.",
-  "{n} bringt Schwung in jede Stuhlreihe."
+  "{n} bringt Schwung in jede Stuhlreihe.",
+  "{n} balanciert Geo-Dreiecke auf der Nasenspitze wie ein Seiltänzer.",
+  "{n} glänzt mit profunden Kenntnissen über das Innenleben von Füllfederhaltern.",
+  "{n} öffnet den Schulranzen mit der Dramatik eines Theaterschauspielers.",
+  "{n} hat die exakte Physik des perfekten Papierschiffchens gemeistert.",
+  "{n} bringt den Klebestift so akkurat auf das Papier, dass es Kunst ist.",
+  "{n} zeigt heroischen Körpereinsatz beim Aufheben eines heruntergefallenen Stifts.",
+  "{n} blättert im Buch mit einer so sanften Note, dass kein Blatt zerreißt.",
+  "{n} hält den Rekord im unsichtbaren Kaugummikauen ohne Lehrkraft-Alarm.",
+  "{n} könnte einem Taschenrechner das Kopfrechnen beibringen.",
+  "{n} beherrscht das kunstvolle Umblättern auf höchstem Niveau.",
+  "{n} hat mehr Durchblick als eine frisch geputzte Fensterscheibe.",
+  "{n} erkennt Hausaufgaben schon am Geräusch des Schulranzens.",
+  "{n} könnte sogar dem Kopierer noch etwas beibringen.",
+  "{n} pflegt eine beneidenswerte Beziehung zum Geodreieck.",
+  "{n} bringt selbst komplizierte Brüche zum Lächeln.",
+  "{n} hat die seltene Gabe, genau dann aufzuwachen, wenn es klingelt.",
+  "{n} könnte beim Rückwärtszählen olympisches Gold gewinnen.",
+  "{n} arbeitet so konzentriert, dass sogar die Uhr langsamer tickt."
 ];
 
 const REMARKS = [
@@ -46,7 +64,25 @@ const REMARKS = [
   "Der Würfel hat leider Kekskrümel im Heft gefunden.",
   "Die Tischplatte bitte nicht mit Kunstwerken verzieren (außer sie sind gut).",
   "Wasserflaschen stehen lieber aufrecht, sagt der Würfel.",
-  "Der Würfel vermutet, dass der Spitzer heimlich Bleistifte frisst."
+  "Der Würfel vermutet, dass der Spitzer heimlich Bleistifte frisst.",
+  "Das Geodreieck ist kein Bumerang und sollte nicht geworfen werden.",
+  "Bitte das Heft vor dem Abgeben vom Kleber befreien, der Würfel klebt fest.",
+  "Der Taschenrechner rechnet zwar schnell, plappert aber zu viel.",
+  "Die Stuhllehne ist keine Hängematte – auch wenn sie gemütlich aussieht.",
+  "Das Kunstwerk auf dem Handrücken war zwar schick, gehört aber aufs Papier.",
+  "Ein Bleistift gilt erst dann als verloren, wenn er im Paralleluniversum landet.",
+  "Die Buchseite wurde liebevoll umgeknickt – der Würfel weint leise.",
+  "Der Klebestift gehört aufs Papier, nicht an den Nachbarmenschen.",
+  "Der Würfel empfiehlt, gelegentlich auch die Aufgabenstellung zu lesen.",
+  "Das Heft ist kein Tagebuch. Zumindest nicht ausschließlich.",
+  "Die Mathematik hat angerufen. Sie möchte ihre Zahlen zurück.",
+  "Bitte nicht versuchen, die Lösung durch Anstarren zu verändern.",
+  "Der Taschenrechner darf auch mal Pause machen, er hat heute schon genug gerechnet.",
+  "Der Würfel vermutet eine geheime Zusammenarbeit mit dem Zufall.",
+  "Die Anzahl der Fragezeichen im Heft übersteigt die Anzahl der Antworten.",
+  "Bitte nicht mit dem Geodreieck telefonieren. Es hat keinen Empfang.",
+  "Der Würfel hat festgestellt: Auch Papier kann geduldig sein.",
+  "Die Rechenzeichen bitte nicht nach persönlicher Sympathie auswählen."
 ];
 
 const OUTLOOKS = [
@@ -59,7 +95,50 @@ const OUTLOOKS = [
   "Dreimal auf Holz klopfen, dann klappt’s auch mit dem Rest.",
   "Vor dem nächsten Test einmal tief durchatmen und „Würfel!“ rufen.",
   "Nächster Meilenstein: ein Stift, der nie wegrollt.",
-  "Der Würfel sagt: Weiter so, die Tafel winkt zurück."
+  "Der Würfel sagt: Weiter so, die Tafel winkt zurück.",
+  "Prognose: Der nächste Stift hält exakt drei Tage.",
+  "Empfehlung: Nach der Stunde dringend eine Runde Kaugummi kauen.",
+  "Nächstes Ziel: Einen fliegenden Papierflieger im geschlossenen Raum fangen.",
+  "Tipp: Die Glückssträhne hält an, solange der Radiergummi intakt bleibt.",
+  "Aussicht: Die Tafel guckt heute besonders freundlich.",
+  "Der Würfel rät zu einer kurzen Kaffeepause für das Gehirn (Kakao tut's auch).",
+  "Vor dem nächsten Test laut „Wumm!“ rufen bringt temporäre Superkräfte.",
+  "Nächster Meilenstein: Einen ganzen Schultag ohne verschwundenen Stift überstehen.",
+  "Prognose: Die Zahlen werden sich irgendwann freiwillig ergeben.",
+  "Zukunftsziel: Einmal eine Aufgabe lösen, ohne den Würfel zu befragen.",
+  "Der Würfel sieht großes Potenzial. Leider hat er keine Brille dabei.",
+  "Empfehlung: Eine Karriere als professioneller Aufgabenüberspringer prüfen.",
+  "Die Sterne stehen günstig. Der Taschenrechner eher nicht.",
+  "Nächstes Ziel: Die Klammern verstehen, bevor sie zurückschlagen.",
+  "Der Würfel sagt eine glänzende Zukunft voraus. Wahrscheinlich wegen des Glitzerstifts.",
+  "In fünf Jahren wird diese Note entweder Geschichte oder ein ungelöstes Rätsel sein.",
+  "Die Zukunft ist ungewiss. Aber immerhin ist sie nicht benotet.",
+  "Der Würfel empfiehlt: Niemals den Glauben an die eigenen Fähigkeiten verlieren. Oder den Würfel."
+];
+
+// Ausreden für schlechte Noten: Die Schuld liegt immer beim Würfel oder bei den Umständen,
+// nie beim Kind. Der Würfel „spricht“, deshalb steht im Satz kein Name.
+const EXCUSES = [
+  "Gegenwind im Klassenzimmer.",
+  "Der Würfel wurde vor dem Wurf von einem Keks abgelenkt.",
+  "Merkur stand rückwärts, da zählt die Note nicht.",
+  "Die Zahlen waren heute alle im Streik.",
+  "Der Würfel hatte Schluckauf beim Rollen.",
+  "Auf dem Tisch lag ein Krümel, der den Wurf gebremst hat.",
+  "Der Würfel hat sich beim Wurf verzählt. Er kann nur bis sechs.",
+  "Das Licht stand ungünstig, der Würfel war geblendet.",
+  "Der Würfel hat heute Morgen den falschen Fuß zuerst aus dem Bett gesetzt.",
+  "Ein Papierflieger ist mitten im Wurf dazwischengeflogen.",
+  "Der Würfel hat vergessen, vorher zu frühstücken.",
+  "Eine Schwarze-Katzen-Wolke zog über die Schule.",
+  "Der Würfel hatte Lampenfieber vor so viel Publikum.",
+  "Die Tafel hat im falschen Moment geknarzt.",
+  "Der Würfel ist heute auf der Seite der Pechvögel gelandet.",
+  "Der Würfel hat nicht aufgepasst, er hat zur Pausenklingel geschielt.",
+  "Eine Fliege hat sich genau im Wurf auf die Sechs gesetzt.",
+  "Der Würfel war noch müde vom Wochenende.",
+  "Die Schwerkraft hatte heute einen schlechten Tag.",
+  "Der Würfel wurde zu schnell geschüttelt. Das ist nicht gut für seinen Charakter."
 ];
 
 const SUMMARY_LINES = [
@@ -95,13 +174,20 @@ function buildComment(name) {
   return [pick(PRAISE).replace('{n}', name), pick(REMARKS), pick(OUTLOOKS)].join(' ');
 }
 
+// Ab einer 5 immer, bei einer 4 nur manchmal
+function needsExcuse(g) {
+  if (g.base >= 5) return true;
+  if (g.base === 4) return Math.random() < 0.5;
+  return false;
+}
+
 function formatAverage(x) {
   return x.toFixed(1).replace('.', ',');
 }
 
 // ---------- Zustand ----------
 
-let entries = [];   // [{ name, grade, comment, el, rolling }]
+let entries = [];   // [{ name, grade, comment, excuse, withExcuses, el, rolling }]
 let runId = 0;      // erhöht sich bei jedem neuen Durchlauf, alte Timer brechen dann ab
 let summaryEl = null;
 
@@ -156,6 +242,9 @@ function land(entry, animate) {
 function rollEntry(entry, withPlusMinus, delayMs, thisRun) {
   const animate = !prefersReducedMotion();
   entry.grade = rollGrade(withPlusMinus);
+  entry.excuse = (entry.withExcuses && needsExcuse(entry.grade)) ? pick(EXCUSES) : '';
+  const excuseEl = entry.el.querySelector('.grade-excuse');
+  if (excuseEl) excuseEl.textContent = entry.excuse;
   entry.rolling = true;
   entry.el.classList.remove('is-landed', 'is-pop');
   entry.el.classList.add('is-rolling');
@@ -206,6 +295,7 @@ function render(names) {
   const thisRun = runId;
   const withPlusMinus = gradesPlusMinus.checked;
   const withComments = gradesComments.checked;
+  const withExcuses = gradesExcuses.checked;
 
   gradesResults.innerHTML = '';
   entries = [];
@@ -243,6 +333,11 @@ function render(names) {
       c.className = 'grade-comment';
       body.appendChild(c);
     }
+    if (withExcuses) {
+      const x = document.createElement('p');
+      x.className = 'grade-excuse';
+      body.appendChild(x);
+    }
     li.appendChild(body);
 
     const badge = document.createElement('div');
@@ -258,7 +353,7 @@ function render(names) {
     reroll.textContent = '🎲';
     li.appendChild(reroll);
 
-    const entry = { name, grade: null, comment: '', el: li, rolling: true };
+    const entry = { name, grade: null, comment: '', excuse: '', withExcuses, el: li, rolling: true };
     entries.push(entry);
     list.appendChild(li);
 
@@ -294,8 +389,10 @@ function copyResults() {
   const finished = entries.filter(e => e.grade);
   if (finished.length === 0) return;
   const lines = finished.map(e => {
-    const base = e.name + ': ' + gradeLabel(e.grade);
-    return e.comment ? base + ' – ' + e.comment : base;
+    let line = e.name + ': ' + gradeLabel(e.grade);
+    if (e.comment) line += ' – ' + e.comment;
+    if (e.excuse) line += ' Ausrede des Würfels: ' + e.excuse;
+    return line;
   });
   const text = 'Spaßnoten vom Würfel 🎲 (nicht ernst gemeint)\n\n' + lines.join('\n');
   navigator.clipboard.writeText(text).then(() => {

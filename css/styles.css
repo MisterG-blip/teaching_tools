@@ -1370,6 +1370,27 @@
   }
   .grade-card.is-rolling .grade-comment { opacity: 0; transition: none; }
 
+  .grade-excuse {
+    margin: 8px 0 0;
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    font-style: italic;
+    line-height: 1.4;
+    color: var(--ink);
+    background: #fff8e1;
+    border-left: 3px solid var(--pencil-5);
+    border-radius: 6px;
+    opacity: 1;
+    transition: opacity 0.5s ease 0.5s;
+  }
+  .grade-excuse::before {
+    content: '🙈 Ausrede des Würfels: ';
+    font-style: normal;
+    font-weight: 700;
+  }
+  .grade-excuse:empty { display: none; }
+  .grade-card.is-rolling .grade-excuse { opacity: 0; transition: none; }
+
   .grade-badge {
     position: relative;
     flex: 0 0 auto;
