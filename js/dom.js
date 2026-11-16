@@ -80,7 +80,7 @@ export const jigsawError = document.getElementById('jigsawError');
 export const jigsawBtn = document.getElementById('jigsawBtn');
 export const jigsawResults = document.getElementById('jigsawResults');
 
-// Noten würfeln (Spaßfunktion)
+// Würfeln des Schicksals (Spaßfunktion)
 export const gradesPlusMinus = document.getElementById('gradesPlusMinus');
 export const gradesComments = document.getElementById('gradesComments');
 export const gradesExcuses = document.getElementById('gradesExcuses');

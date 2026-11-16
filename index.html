@@ -45,7 +45,7 @@
     <button type="button" class="nav-item" data-view="draw">🎲 Gruppen auslosen</button>
     <button type="button" class="nav-item" data-view="jigsaw">🧩 Gruppenpuzzle</button>
     <button type="button" class="nav-item" data-view="rollcall">🎰 Zufällig aufrufen</button>
-    <button type="button" class="nav-item" data-view="grades">🎓 Noten würfeln</button>
+    <button type="button" class="nav-item" data-view="grades">🎓 Würfel des Schicksals</button>
 
     <p class="nav-section-label">Organisation</p>
     <button type="button" class="nav-item" data-view="duties">🧹 Klassendienste</button>
@@ -459,10 +459,10 @@
     <section class="view is-hidden" id="view-grades" data-view="grades">
       <div class="workspace">
         <div class="workspace-head">
-          <h2>🎓 Noten würfeln</h2>
+          <h2>🎓 Würfel des Schicksals</h2>
         </div>
-        <p class="workspace-sub">Jede Person der gewählten Gruppe bekommt eine Note vom Würfel samt einem zusammengewürfelten Kommentar.</p>
-        <p class="fun-note">🎲 <strong>Reiner Spaß!</strong> Die Noten werden ausgewürfelt, haben nichts mit echten Leistungen zu tun und werden nirgends gespeichert.</p>
+        <p class="workspace-sub">Das Schicksal hat gesprochen: Jede Person erhält eine vom Schicksalswürfel bestimmte Note und einen Kommentar aus den Tiefen des Zufalls.</p>
+        <p class="fun-note">🎲 <strong>Ein Spiel des Schicksals!</strong> Die Urteile des Würfels sind reine Willkür, haben keinerlei Bezug zu tatsächlichen Leistungen und werden weder gespeichert noch in irgendeiner Form festgehalten. Das Orakel vergisst alles!</p>
 
         <div class="config-row">
           <div class="field-group">
@@ -487,7 +487,7 @@
 
         <p class="error" id="gradesError" role="alert"></p>
 
-        <button type="button" class="draw-btn" id="gradesBtn">Noten würfeln</button>
+        <button type="button" class="draw-btn" id="gradesBtn">Würfel des Schisksals</button>
 
         <section id="gradesResults" aria-live="polite"></section>
       </div>
