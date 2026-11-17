@@ -12,6 +12,7 @@ import { auth, db } from './firebase-init.js';
 import { resetCalled } from './roll-call.js';
 import { loadSeatingFromGroup } from './seating.js';
 import { loadDutiesFromGroup } from './duties.js';
+import { loadAquariumFromGroup } from './aquarium.js';
 import { userDisplayName } from './settings.js';
 import {
   accountStatus, authForm, loggedInRow,
@@ -129,6 +130,7 @@ function selectGroup(id) {
   resetCalled();
   loadSeatingFromGroup(g);
   loadDutiesFromGroup(g);
+  loadAquariumFromGroup(g);
   renderGroupList();
   updateGroupPickerHint();
   syncMyMemberInfo(id);

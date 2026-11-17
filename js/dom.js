@@ -100,6 +100,11 @@ export const aquariumResetBtn = document.getElementById('aquariumResetBtn');
 export const aquariumFullscreenBtn = document.getElementById('aquariumFullscreenBtn');
 export const aquariumHint = document.getElementById('aquariumHint');
 export const aquariumError = document.getElementById('aquariumError');
+export const aquariumToast = document.getElementById('aquariumToast');
+export const aquariumLogHint = document.getElementById('aquariumLogHint');
+export const aquariumTrophies = document.getElementById('aquariumTrophies');
+export const aquariumSessions = document.getElementById('aquariumSessions');
+export const aquariumClearLogBtn = document.getElementById('aquariumClearLogBtn');
 
 // Würfeln des Schicksals (Spaßfunktion)
 export const gradesPlusMinus = document.getElementById('gradesPlusMinus');

@@ -47,7 +47,8 @@ export function createTank() {
     shake: 0,
     time: 0,
     pendingHunt: false,
-    stats: { eaten: 0, quietStreak: 0, bestQuiet: 0 },
+    stats: { eaten: 0, quietStreak: 0, bestQuiet: 0, quietTotal: 0 },
+    onEaten: null,     // Callback ohne Argumente, wird bei jedem gefressenen Fisch aufgerufen
     shark: { state: 'away', x: -SHARK_LENGTH, y: 300, dir: 1, target: null, mouth: 0, leaveDir: 1, mouthHold: 0 },
     lurk: { x: 400, dir: 1 },
     bubbles: [],
@@ -110,12 +111,23 @@ export function createTank() {
     tank.loudT = 0; tank.calmT = 0; tank.quietT = 0; tank.cooldown = 0;
     tank.pendingHunt = false;
     tank.particles = []; tank.texts = [];
-    tank.stats = { eaten: 0, quietStreak: 0, bestQuiet: 0 };
+    tank.stats = { eaten: 0, quietStreak: 0, bestQuiet: 0, quietTotal: 0 };
   };
 
   // Manuell: Hai ruft man auch ohne Mikrofon (z. B. zum Vorführen)
   tank.callShark = function callShark() {
     if (tank.shark.state === 'away' && tank.fish.length > 0) tank.pendingHunt = true;
+  };
+
+  // Feier-Effekt (neuer Pokal / Rekord): Funken regnen durchs Becken
+  tank.celebrate = function celebrate() {
+    for (let i = 0; i < 34; i++) {
+      tank.particles.push({
+        x: rand(80, WORLD_W - 80), y: rand(SURFACE_Y + 10, 340),
+        vx: rand(-40, 40), vy: rand(40, 150), r: rand(7, 14),
+        life: -rand(0, 0.6), max: rand(1.4, 2.4), kind: 'spark'
+      });
+    }
   };
 
   // ---------- Hai ----------
@@ -144,6 +156,7 @@ export function createTank() {
     const s = tank.shark;
     tank.fish = tank.fish.filter(f => f !== fish);
     tank.stats.eaten++;
+    if (typeof tank.onEaten === 'function') tank.onEaten();
     tank.shake = 0.35;
     chompBubbles(fish.x, fish.y);
     tank.texts.push({ x: fish.x, y: fish.y - 40, text: 'NOM!', life: 0, max: 1.1 });
@@ -201,6 +214,7 @@ export function createTank() {
 
     if (listening && !loud) {
       tank.stats.quietStreak += dt;
+      tank.stats.quietTotal += dt;
       tank.stats.bestQuiet = Math.max(tank.stats.bestQuiet, tank.stats.quietStreak);
       tank.quietT += dt;
     } else if (loud) {
@@ -431,6 +445,7 @@ function drawBubble(ctx, x, y, r, alpha) {
 }
 
 function drawParticle(ctx, p) {
+  if (p.life < 0) return;
   const k = 1 - p.life / p.max;
   if (p.kind === 'bubble') {
     drawBubble(ctx, p.x, p.y, p.r, clamp(k * 1.3, 0, 0.85));
@@ -631,6 +646,7 @@ function drawShark(ctx, s, t) {
   ctx.quadraticCurveTo(L * 0.02, -h * 1.1, -L * 0.01, -h * 0.75);
   ctx.closePath();
   ctx.fill();
+
 
   // Körper
   const bodyPath = () => {

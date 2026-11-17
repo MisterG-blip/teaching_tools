@@ -501,7 +501,7 @@
         <div class="workspace-head">
           <h2>🐠 Klassen-Aquarium</h2>
         </div>
-        <p class="workspace-sub">Solange die Klasse leise ist, schwimmen die Fische entspannt. Wird es zu laut, kommt der Hai und frisst einen Fisch. Bleibt es lange ruhig, schlüpfen nach und nach neue.</p>
+        <p class="workspace-sub">Solange die Klasse leise ist, schwimmen die Fische entspannt. Wird es zu laut, kommt der Hai und frisst einen Fisch. Bleibt es lange ruhig, schlüpfen nach und nach neue. Rekorde und Pokale werden pro Gruppe gesammelt.</p>
         <p class="fun-note">🎤 Das Mikrofon misst nur die Lautstärke. Es wird nichts aufgenommen, gespeichert oder übertragen.</p>
 
         <div class="aquarium-stage" id="aquariumStage">
@@ -519,6 +519,7 @@
                 <div class="aquarium-meter-mark" id="aquariumMeterMark"></div>
               </div>
             </div>
+            <div class="aquarium-toast" id="aquariumToast" aria-live="polite"></div>
           </div>
         </div>
 
@@ -554,6 +555,19 @@
             </label>
           </div>
         </div>
+
+        <section class="aquarium-log" id="aquariumLog">
+          <h3 class="aquarium-log-title">🏆 Trophäenschrank</h3>
+          <p class="hint" id="aquariumLogHint"></p>
+          <ul class="trophy-shelf" id="aquariumTrophies"></ul>
+
+          <div class="aquarium-log-head">
+            <h3 class="aquarium-log-title">📜 Aufzeichnung</h3>
+            <button type="button" class="btn btn-ghost" id="aquariumClearLogBtn" disabled>Pokale &amp; Aufzeichnung zurücksetzen</button>
+          </div>
+          <p class="hint">Gespeichert werden nur Zahlen: Dauer, Ruhe-Serie, Fische und der Lautstärke-Verlauf. Es gibt keine Tonaufnahme. Die letzten 30 Sitzungen bleiben erhalten.</p>
+          <ul class="session-list" id="aquariumSessions"></ul>
+        </section>
       </div>
     </section>
   </div>
