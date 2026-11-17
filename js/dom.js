@@ -80,6 +80,27 @@ export const jigsawError = document.getElementById('jigsawError');
 export const jigsawBtn = document.getElementById('jigsawBtn');
 export const jigsawResults = document.getElementById('jigsawResults');
 
+// Klassen-Aquarium (Mikrofon-Lautstärke)
+export const aquariumStage = document.getElementById('aquariumStage');
+export const aquariumCanvas = document.getElementById('aquariumCanvas');
+export const aquariumStatus = document.getElementById('aquariumStatus');
+export const aquariumFishInfo = document.getElementById('aquariumFishInfo');
+export const aquariumBest = document.getElementById('aquariumBest');
+export const aquariumMeterFill = document.getElementById('aquariumMeterFill');
+export const aquariumMeterMark = document.getElementById('aquariumMeterMark');
+export const aquariumThreshold = document.getElementById('aquariumThreshold');
+export const aquariumFishCount = document.getElementById('aquariumFishCount');
+export const aquariumFishDecrease = document.getElementById('aquariumFishDecrease');
+export const aquariumFishIncrease = document.getElementById('aquariumFishIncrease');
+export const aquariumRespawn = document.getElementById('aquariumRespawn');
+export const aquariumMicBtn = document.getElementById('aquariumMicBtn');
+export const aquariumCalibrateBtn = document.getElementById('aquariumCalibrateBtn');
+export const aquariumSharkBtn = document.getElementById('aquariumSharkBtn');
+export const aquariumResetBtn = document.getElementById('aquariumResetBtn');
+export const aquariumFullscreenBtn = document.getElementById('aquariumFullscreenBtn');
+export const aquariumHint = document.getElementById('aquariumHint');
+export const aquariumError = document.getElementById('aquariumError');
+
 // Würfeln des Schicksals (Spaßfunktion)
 export const gradesPlusMinus = document.getElementById('gradesPlusMinus');
 export const gradesComments = document.getElementById('gradesComments');

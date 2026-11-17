@@ -10,6 +10,7 @@ import './draw.js';
 import './roll-call.js';
 import './jigsaw.js';
 import './grades.js';
+import './aquarium.js';
 import './seating.js';
 import './duties.js';
 import './groups.js';

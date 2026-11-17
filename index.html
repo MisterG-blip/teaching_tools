@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/aquarium.css">
 </head>
 <body>
 
@@ -45,6 +46,7 @@
     <button type="button" class="nav-item" data-view="draw">🎲 Gruppen auslosen</button>
     <button type="button" class="nav-item" data-view="jigsaw">🧩 Gruppenpuzzle</button>
     <button type="button" class="nav-item" data-view="rollcall">🎰 Zufällig aufrufen</button>
+    <button type="button" class="nav-item" data-view="aquarium">🐠 Klassen-Aquarium</button>
     <button type="button" class="nav-item" data-view="grades">🎓 Würfel des Schicksals</button>
 
     <p class="nav-section-label">Organisation</p>
@@ -487,9 +489,71 @@
 
         <p class="error" id="gradesError" role="alert"></p>
 
-        <button type="button" class="draw-btn" id="gradesBtn">Würfel des Schisksals</button>
+        <button type="button" class="draw-btn" id="gradesBtn">Würfel des Schicksals</button>
 
         <section id="gradesResults" aria-live="polite"></section>
+      </div>
+    </section>
+
+    <!-- ===================== Unterrichtsorganisation: Klassen-Aquarium ===================== -->
+    <section class="view is-hidden" id="view-aquarium" data-view="aquarium">
+      <div class="workspace">
+        <div class="workspace-head">
+          <h2>🐠 Klassen-Aquarium</h2>
+        </div>
+        <p class="workspace-sub">Solange die Klasse leise ist, schwimmen die Fische entspannt. Wird es zu laut, kommt der Hai und frisst einen Fisch. Bleibt es lange ruhig, schlüpfen nach und nach neue.</p>
+        <p class="fun-note">🎤 Das Mikrofon misst nur die Lautstärke. Es wird nichts aufgenommen, gespeichert oder übertragen.</p>
+
+        <div class="aquarium-stage" id="aquariumStage">
+          <div class="aquarium-frame">
+            <canvas id="aquariumCanvas" role="img" aria-label="Aquarium mit Fischen und einem Hai"></canvas>
+            <div class="aquarium-hud">
+              <span class="aquarium-pill" id="aquariumFishInfo">🐠 8 / 8</span>
+              <span class="aquarium-pill aquarium-status" id="aquariumStatus" aria-live="polite">Mikrofon starten, damit der Hai mithören kann</span>
+              <span class="aquarium-pill" id="aquariumBest">🤫 Längste Ruhe 0:00</span>
+            </div>
+            <div class="aquarium-meter" aria-hidden="true">
+              <span class="aquarium-meter-label">Lautstärke</span>
+              <div class="aquarium-meter-bar">
+                <div class="aquarium-meter-fill" id="aquariumMeterFill" data-state="ok"></div>
+                <div class="aquarium-meter-mark" id="aquariumMeterMark"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="aquarium-actions">
+          <button type="button" class="draw-btn" id="aquariumMicBtn">🎤 Mikrofon starten</button>
+          <button type="button" class="btn btn-ghost" id="aquariumCalibrateBtn" disabled>Kalibrieren</button>
+          <button type="button" class="btn btn-ghost" id="aquariumSharkBtn">🦈 Hai rufen</button>
+          <button type="button" class="btn btn-ghost" id="aquariumResetBtn">Neu starten</button>
+          <button type="button" class="btn btn-ghost" id="aquariumFullscreenBtn">⛶ Vollbild</button>
+        </div>
+
+        <p class="hint" id="aquariumHint">Tipp: Für Smartboard oder Beamer den Vollbild-Modus nutzen.</p>
+        <p class="error" id="aquariumError" role="alert"></p>
+
+        <div class="config-row">
+          <div class="field-group">
+            <label class="field-label" for="aquariumThreshold">Lautstärke-Grenze</label>
+            <input type="range" id="aquariumThreshold" class="aquarium-range" min="10" max="95" value="65">
+            <p class="hint">Links = streng, rechts = großzügig. Die Marke in der Lautstärke-Anzeige zeigt die Grenze.</p>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="aquariumFishCount">Anzahl Fische</label>
+            <div class="number-field">
+              <button type="button" id="aquariumFishDecrease" aria-label="Weniger Fische">−</button>
+              <input type="number" id="aquariumFishCount" value="8" min="1" max="30" inputmode="numeric">
+              <button type="button" id="aquariumFishIncrease" aria-label="Mehr Fische">+</button>
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="checkbox-row">
+              <input type="checkbox" id="aquariumRespawn" checked>
+              Neue Fische bei langer Ruhe
+            </label>
+          </div>
+        </div>
       </div>
     </section>
   </div>
