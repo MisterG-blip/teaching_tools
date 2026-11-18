@@ -23,6 +23,7 @@ import { groups, activeGroupId } from './groups.js';
 import { createTank, WORLD_W, WORLD_H } from './aquarium-scene.js';
 import * as Rec from './aquarium-records.js';
 import { renderLog } from './aquarium-log.js';
+import { SPECIES } from './aquarium-fish.js';
 import {
   aquariumStage, aquariumCanvas, aquariumStatus, aquariumFishInfo, aquariumBest, aquariumToast,
   aquariumMeterFill, aquariumMeterMark, aquariumThreshold,
@@ -105,6 +106,7 @@ function renderLogForActive() {
   }
   aquariumClearLogBtn.disabled = !g || !(auth && auth.currentUser);
   renderLog(currentAquarium());
+  syncSpecials(true);
 }
 
 // ---------- Meldungen im Becken (auch im Vollbild sichtbar) ----------
@@ -186,11 +188,29 @@ function liveValues() {
 
 function trophyToast(id, tier) {
   const def = Rec.TROPHIES.find(t => t.id === id);
-  celebrate(MEDAL[tier] + ' ' + Rec.tierName(tier) + '-Pokal „' + def.title + '“!');
+  let text = MEDAL[tier] + ' ' + Rec.tierName(tier) + '-Pokal „' + def.title + '“!';
+  if (tier === 1) text += ' Neuer Fisch: ' + SPECIES[id].name;
+  celebrate(text);
 }
 
 function platinToast() {
-  celebrate('💎 PLATIN! ' + groupLabel() + ' sind Aquarium-Legenden: alle Pokale auf Gold!');
+  celebrate('💎 PLATIN! ' + groupLabel() + ' sind Aquarium-Legenden: alle Pokale auf Gold! Neuer Fisch: ' + SPECIES.platin.name);
+}
+
+// ---------- Besondere Fische: einer pro Pokal ----------
+
+function specialList(records) {
+  const tiers = Rec.trophyTiers(records);
+  const list = Rec.TROPHIES.filter(t => tiers[t.id] > 0).map(t => ({ id: t.id, tier: tiers[t.id] }));
+  if (Rec.isPlatin(records)) list.push({ id: 'platin', tier: 3 });
+  return list;
+}
+
+// Gespeicherte Pokale plus das, was in der laufenden Sitzung schon erspielt wurde
+function syncSpecials(silent) {
+  const stored = currentRecords();
+  const records = session ? Rec.mergeLive(stored, liveValues()) : stored;
+  tank.setSpecials(specialList(records), silent);
 }
 
 // Meldet Rekorde und Pokale schon während der Sitzung, nicht erst beim Speichern
@@ -218,6 +238,7 @@ function checkLiveTrophies() {
     a.platin = true;
     platinToast();
   }
+  syncSpecials(false);
 }
 
 // Beendet die Sitzung und speichert sie. WICHTIG: vor tank.reset() aufrufen,

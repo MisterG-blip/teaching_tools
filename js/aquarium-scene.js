@@ -16,6 +16,8 @@
 //   - Bei anhaltender Ruhe schlüpft nach einer Weile ein neuer Fisch.
 // ============================================================================
 
+import { drawSpecial, SPECIES, TIER_SCALE } from './aquarium-fish.js';
+
 export const WORLD_W = 1600;
 export const WORLD_H = 900;
 
@@ -47,6 +49,7 @@ function newStats() {
 export function createTank() {
   const tank = {
     fish: [],
+    specials: [],      // besondere Fische aus Pokalen: zählen nicht, der Hai ignoriert sie
     maxFish: 8,
     respawn: true,
     tension: 0,        // 0 = entspannt, 1 = kurz vor "zu laut" (für Wasserfarbe und Hai-Flosse)
@@ -146,6 +149,25 @@ export function createTank() {
         life: -rand(0, 0.6), max: rand(1.4, 2.4), kind: 'spark'
       });
     }
+  };
+
+  /**
+   * Besondere Fische aus Pokalen. list = [{ id, tier }], tier 1-3.
+   * silent=true: ohne Funkeneffekt (z. B. beim Laden einer Gruppe).
+   */
+  tank.setSpecials = function setSpecials(list, silent) {
+    const wanted = new Map(list.map(e => [e.id, e.tier]));
+    tank.specials = tank.specials.filter(f => wanted.has(f.id));
+    tank.specials.forEach(f => { f.tier = wanted.get(f.id); });
+    list.forEach(e => {
+      if (!SPECIES[e.id] || tank.specials.some(f => f.id === e.id)) return;
+      const f = makeFish(!silent);
+      f.special = true;
+      f.id = e.id;
+      f.tier = e.tier;
+      f.size = SPECIES[e.id].size;
+      tank.specials.push(f);
+    });
   };
 
   // ---------- Hai ----------
@@ -287,7 +309,7 @@ export function createTank() {
 
     // Fische
     const hunting = shark.state === 'hunt';
-    tank.fish.forEach(f => {
+    tank.fish.concat(tank.specials).forEach(f => {
       f.spawnT = Math.min(1, f.spawnT + dt * 1.6);
 
       let panicTarget = 0;
@@ -308,7 +330,8 @@ export function createTank() {
         if (Math.random() < 0.3) f.dir *= -1;
         f.baseSpeed = rand(55, 110);
       }
-      const speed = f.baseSpeed * (1 + f.panic * 2.2);
+      // Der Kugelfisch flüchtet kaum, er bläht sich stattdessen auf
+      const speed = f.baseSpeed * (1 + f.panic * (f.id === 'sharkfree' ? 0.2 : 2.2));
       f.x += f.dir * speed * dt;
       if (f.x < 90) { f.x = 90; f.dir = 1; }
       if (f.x > WORLD_W - 90) { f.x = WORLD_W - 90; f.dir = -1; }
@@ -317,6 +340,14 @@ export function createTank() {
       f.y += (f.ty - f.y) * Math.min(1, dt * (0.8 + f.panic * 2));
       f.vy = dt > 0 ? (f.y - prevY) / dt : 0;
       f.phase += dt * (5 + speed * 0.05);
+
+      // Gold und Platin glitzern
+      if (f.special && f.tier >= 3 && Math.random() < dt * 4) {
+        tank.particles.push({
+          x: f.x + rand(-24, 24), y: f.y + rand(-18, 18), vx: rand(-20, 20), vy: rand(-40, -10),
+          r: rand(3, 6), life: 0, max: rand(0.6, 1.0), kind: 'spark'
+        });
+      }
     });
 
     // Flosse, die an der Oberfläche patrouilliert, wenn es unruhig wird
@@ -365,6 +396,7 @@ export function createTank() {
     drawLurkFin(ctx, tank);
     tank.bubbles.forEach(b => drawBubble(ctx, b.x, b.y, b.r, 0.55));
     tank.fish.forEach(f => drawFish(ctx, f, tank.time));
+    tank.specials.forEach(f => drawSpecialFish(ctx, f, tank.time));
     if (tank.shark.state !== 'away') drawShark(ctx, tank.shark, tank.time);
     tank.particles.forEach(p => drawParticle(ctx, p));
     drawSurface(ctx, tank);
@@ -582,6 +614,19 @@ function drawLurkFin(ctx, tank) {
   ctx.moveTo(48, 4);
   ctx.quadraticCurveTo(70, -2, 96, 4);
   ctx.stroke();
+  ctx.restore();
+}
+
+function drawSpecialFish(ctx, f, t) {
+  const grow = f.spawnT < 1 ? 1 - Math.pow(1 - f.spawnT, 3) : 1;
+  const s = f.size * TIER_SCALE[f.tier] * grow;
+  if (s < 1) return;
+  const tilt = clamp((f.vy / (f.baseSpeed + 40)) * 0.6, -0.4, 0.4);
+  ctx.save();
+  ctx.translate(f.x, f.y + Math.sin(t * 2 + f.phase) * 1.5);
+  ctx.scale(f.dir, 1);
+  ctx.rotate(tilt);
+  drawSpecial(ctx, f.id, s, { phase: f.phase, panic: f.panic, t });
   ctx.restore();
 }
 

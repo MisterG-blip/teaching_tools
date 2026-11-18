@@ -9,8 +9,10 @@ import {
   trophyStates, sessionList, parseList, formatDuration
 } from './aquarium-records.js';
 import { aquariumTrophies, aquariumSessions } from './dom.js';
+import { SPECIES, drawSpeciesPreview } from './aquarium-fish.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
+const TIER_NUMBER = { locked: 0, bronze: 1, silver: 2, gold: 3, platin: 3 };
 const BADGE_TEXT = {
   quiet: '🏆 Ruhe-Rekord',
   fish: '🐠 Fisch-Rekord',
@@ -40,16 +42,25 @@ export function renderTrophies(records) {
     li.dataset.tier = t.tier;
     li.dataset.trophy = t.id;
 
-    const cup = el('div', 'trophy-icon', t.icon);
-    cup.setAttribute('aria-hidden', 'true');
-    li.appendChild(cup);
+    // Der Fisch, den dieser Pokal freischaltet (grau, solange er gesperrt ist)
+    const unlocked = t.tier !== 'locked';
+    const species = SPECIES[t.id];
+    if (species) {
+      const fish = el('canvas', 'trophy-fish');
+      fish.setAttribute('role', 'img');
+      fish.setAttribute('aria-label', unlocked ? species.name + ' (freigeschaltet)' : species.name + ' (noch gesperrt)');
+      drawSpeciesPreview(fish, t.id, TIER_NUMBER[t.tier] || 0, unlocked);
+      li.appendChild(fish);
+    }
 
-    const title = el('p', 'trophy-title', t.title);
-    li.appendChild(title);
+    li.appendChild(el('p', 'trophy-title', t.icon + ' ' + t.title));
 
     if (t.tierName) li.appendChild(el('span', 'trophy-tier', t.tierName));
     li.appendChild(el('p', 'trophy-value', t.value));
     li.appendChild(el('p', 'trophy-detail', t.detail));
+    if (species) {
+      li.appendChild(el('p', 'trophy-fishname', unlocked ? '🐠 ' + species.name + ' ist im Becken' : '🔒 Schaltet frei: ' + species.name));
+    }
     aquariumTrophies.appendChild(li);
   });
 }
