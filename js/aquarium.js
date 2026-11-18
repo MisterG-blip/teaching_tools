@@ -37,6 +37,8 @@ const tank = createTank();
 
 const DEFAULT_THRESHOLD = 65;
 const CALIBRATE_SECONDS = 3;
+const MAX_FISH = 40;
+const DEFAULT_FISH = 8;      // wenn die Gruppe noch keine Namen hat
 
 // ---------- Zustand ----------
 
@@ -67,7 +69,7 @@ function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 const formatTime = Rec.formatDuration;
 function fishTarget() {
   const v = parseInt(aquariumFishCount.value, 10);
-  return clamp(Number.isFinite(v) ? v : 8, 1, 30);
+  return clamp(Number.isFinite(v) ? v : DEFAULT_FISH, 1, MAX_FISH);
 }
 
 // ---------- Gruppe & gespeicherte Daten ----------
@@ -148,11 +150,17 @@ function startSession() {
     sampleT: 0,
     curve: [],
     ate: [],
-    announced: { record: false, tier: 0, haifrei: false }
+    fishTier: 0,
+    announced: { record: false, tiers: {}, platin: false }
   };
 }
 
 tank.onEaten = () => { if (session) session.ate.push(session.listen); };
+
+// Kleine Meldungen für die neuen Erfolge; Stufen-Pokale meldet checkLiveTrophies()
+tank.onRescued = () => { if (session) { toast('🛟 Gerettet! Der Hai zieht hungrig ab.'); checkLiveTrophies(); } };
+tank.onComeback = () => { if (session) { toast('🌱 Comeback! 3 Minuten Ruhe nach dem Hai-Angriff.'); checkLiveTrophies(); } };
+tank.onPondFull = () => { if (session) { toast('🐟 Voller Teich! Alle Fische sind wieder da.'); checkLiveTrophies(); } };
 
 function tickSession(dt) {
   if (!session) return;
@@ -161,30 +169,54 @@ function tickSession(dt) {
   if (session.sampleT >= 1) {
     session.sampleT -= 1;
     session.curve.push(level);
+    session.fishTier = Math.max(session.fishTier, Rec.fishTierNow(session.listen, tank.fish.length, tank.maxFish));
+    checkLiveTrophies();   // einmal pro Sekunde reicht
   }
-  checkLiveTrophies();
+}
+
+// Werte der laufenden Sitzung (für Live-Meldungen)
+function liveValues() {
+  const st = tank.stats;
+  return {
+    bestQuiet: st.bestQuiet, bestSharkFree: st.bestSharkFree, quietTotal: st.quietTotal,
+    rescued: st.rescued, comebacks: st.comebacks, pondFull: st.pondFull,
+    fishTier: session ? session.fishTier : 0
+  };
+}
+
+function trophyToast(id, tier) {
+  const def = Rec.TROPHIES.find(t => t.id === id);
+  celebrate(MEDAL[tier] + ' ' + Rec.tierName(tier) + '-Pokal „' + def.title + '“!');
+}
+
+function platinToast() {
+  celebrate('💎 PLATIN! ' + groupLabel() + ' sind Aquarium-Legenden: alle Pokale auf Gold!');
 }
 
 // Meldet Rekorde und Pokale schon während der Sitzung, nicht erst beim Speichern
 function checkLiveTrophies() {
+  if (!session) return;
   const a = session.announced;
   const stored = currentRecords();
-  const storedBest = stored.bestQuiet || 0;
   const best = tank.stats.bestQuiet;
 
-  if (!a.record && storedBest >= 60 && best > storedBest) {
+  if (!a.record && (stored.bestQuiet || 0) >= Rec.QUIET_RECORD_MIN_SECONDS && best > stored.bestQuiet) {
     a.record = true;
     celebrate('🏆 Neuer Ruhe-Rekord für ' + groupLabel() + ': ' + formatTime(best) + '!');
   }
-  const liveTier = Rec.quietTier(best);
-  if (liveTier > Rec.quietTier(storedBest) && liveTier > a.tier) {
-    a.tier = liveTier;
-    const t = Rec.QUIET_TIERS[liveTier - 1];
-    celebrate(MEDAL[liveTier] + ' ' + t.name + '-Pokal: ' + formatTime(t.seconds) + ' Ruhe am Stück!');
-  }
-  if (!a.haifrei && session.listen >= Rec.HAIFREI_SECONDS && tank.stats.eaten === 0) {
-    a.haifrei = true;
-    celebrate('🛡️ Haifrei! 5 Minuten ohne gefressenen Fisch');
+
+  const before = Rec.trophyTiers(stored);
+  const merged = Rec.mergeLive(stored, liveValues());
+  const now = Rec.trophyTiers(merged);
+  Object.keys(now).forEach(id => {
+    if (now[id] > Math.max(before[id], a.tiers[id] || 0)) {
+      a.tiers[id] = now[id];
+      trophyToast(id, now[id]);
+    }
+  });
+  if (!a.platin && Rec.isPlatin(merged) && !Rec.isPlatin(stored)) {
+    a.platin = true;
+    platinToast();
   }
 }
 
@@ -200,7 +232,12 @@ function endSession(announce) {
     dur: s.listen,
     quiet: tank.stats.quietTotal,
     bestQuiet: tank.stats.bestQuiet,
+    bestSharkFree: tank.stats.bestSharkFree,
     eaten: tank.stats.eaten,
+    rescued: tank.stats.rescued,
+    comebacks: tank.stats.comebacks,
+    pondFull: tank.stats.pondFull,
+    fishTier: s.fishTier,
     fishEnd: tank.fish.length,
     fishMax: tank.maxFish,
     threshold,
@@ -221,6 +258,19 @@ function endSession(announce) {
     return;
   }
   if (announce) toast('Sitzung gespeichert: ' + summary);
+
+  // Pokale, die erst jetzt feststehen (z. B. Fische am Ende), und Platin melden
+  if (announce) {
+    const prior = ((groups[s.groupId] || {}).aquarium || {}).records || {};
+    const after = Rec.applySessionToRecords(prior, built);
+    const afterTiers = Rec.trophyTiers(after);
+    const beforeTiers = Rec.trophyTiers(prior);
+    Object.keys(afterTiers).forEach(id => {
+      if (afterTiers[id] > Math.max(beforeTiers[id], s.announced.tiers[id] || 0)) trophyToast(id, afterTiers[id]);
+    });
+    if (!s.announced.platin && Rec.isPlatin(after) && !Rec.isPlatin(prior)) platinToast();
+  }
+
   persistSession(s.groupId, built);
 }
 
@@ -244,8 +294,11 @@ async function persistSession(groupId, built) {
 }
 
 // Wird von groups.js beim Wechsel der Gruppe aufgerufen
-export function loadAquariumFromGroup() {
+export function loadAquariumFromGroup(g) {
   endSession(false);              // laufende Sitzung gehört noch zur alten Gruppe
+  // Ein Fisch pro Schüler: Standard ist die Anzahl der Namen in der Gruppe
+  const names = ((g && g.names) || '').split('\n').map(n => n.trim()).filter(n => n.length > 0).length;
+  if (names > 0) aquariumFishCount.value = clamp(names, 1, MAX_FISH);
   tank.reset(fishTarget());       // neue Klasse = frisches Becken
   startSession();                 // falls das Mikrofon noch läuft
   renderLogForActive();
@@ -523,7 +576,7 @@ aquariumClearLogBtn.addEventListener('click', () => {
 aquariumRespawn.addEventListener('change', () => { tank.respawn = aquariumRespawn.checked; });
 
 function applyFishCount(next) {
-  aquariumFishCount.value = clamp(next, 1, 30);
+  aquariumFishCount.value = clamp(next, 1, MAX_FISH);
   restartTank();
 }
 aquariumFishDecrease.addEventListener('click', () => applyFishCount(fishTarget() - 1));

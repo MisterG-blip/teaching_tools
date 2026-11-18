@@ -24,6 +24,7 @@ const SURFACE_Y = 44;
 const GRACE_SECONDS = 1.2;
 const CALM_ABORT_SECONDS = 1.2;
 const HATCH_AFTER_QUIET_SECONDS = 20;
+const COMEBACK_SECONDS = 180;   // so lange Ruhe nach einem gefressenen Fisch = Comeback
 const SHARK_LENGTH = 460;
 const SHARK_SPEED = 400;        // Anflug: langsam genug, dass die Klasse noch reagieren kann
 const SHARK_LUNGE_SPEED = 820;  // Endspurt kurz vor dem Fisch
@@ -33,6 +34,15 @@ const FISH_HUES = [8, 28, 48, 165, 200, 265, 320, 345];
 const rand = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const approach = (cur, target, step) => cur + clamp(target - cur, -step, step);
+
+function newStats() {
+  return {
+    eaten: 0,
+    quietStreak: 0, bestQuiet: 0, quietTotal: 0,
+    sharkFree: 0, bestSharkFree: 0,     // Zeit ohne gefressenen Fisch
+    rescued: 0, comebacks: 0, pondFull: 0
+  };
+}
 
 export function createTank() {
   const tank = {
@@ -47,9 +57,15 @@ export function createTank() {
     shake: 0,
     time: 0,
     pendingHunt: false,
-    stats: { eaten: 0, quietStreak: 0, bestQuiet: 0, quietTotal: 0 },
-    onEaten: null,     // Callback ohne Argumente, wird bei jedem gefressenen Fisch aufgerufen
-    shark: { state: 'away', x: -SHARK_LENGTH, y: 300, dir: 1, target: null, mouth: 0, leaveDir: 1, mouthHold: 0 },
+    stats: newStats(),
+    lostFish: false,   // wurde seit dem letzten vollen Becken ein Fisch gefressen?
+    comeback: { active: false, quiet: 0 },
+    // Callbacks (ohne Argumente), von aquarium.js gesetzt:
+    onEaten: null,     // ein Fisch wurde gefressen
+    onRescued: null,   // der Hai hat abgebrochen, weil die Klasse leise wurde
+    onComeback: null,  // 3 Minuten Ruhe nach einem gefressenen Fisch
+    onPondFull: null,  // alle Fische sind nach einem Verlust wieder da
+    shark: { state: 'away', x: -SHARK_LENGTH, y: 300, dir: 1, target: null, mouth: 0, leaveDir: 1, mouthHold: 0, forced: false },
     lurk: { x: 400, dir: 1 },
     bubbles: [],
     particles: [],
@@ -111,7 +127,9 @@ export function createTank() {
     tank.loudT = 0; tank.calmT = 0; tank.quietT = 0; tank.cooldown = 0;
     tank.pendingHunt = false;
     tank.particles = []; tank.texts = [];
-    tank.stats = { eaten: 0, quietStreak: 0, bestQuiet: 0, quietTotal: 0 };
+    tank.stats = newStats();
+    tank.lostFish = false;
+    tank.comeback = { active: false, quiet: 0 };
   };
 
   // Manuell: Hai ruft man auch ohne Mikrofon (z. B. zum Vorführen)
@@ -135,6 +153,7 @@ export function createTank() {
   function startHunt() {
     const s = tank.shark;
     if (tank.fish.length === 0) return;
+    s.forced = tank.pendingHunt;   // per Knopf gerufen: kein Abbruch bei Stille
     s.target = tank.fish[Math.floor(Math.random() * tank.fish.length)];
     s.dir = Math.random() < 0.5 ? 1 : -1;
     s.x = s.dir > 0 ? -SHARK_LENGTH * 0.4 : WORLD_W + SHARK_LENGTH * 0.4;
@@ -156,6 +175,9 @@ export function createTank() {
     const s = tank.shark;
     tank.fish = tank.fish.filter(f => f !== fish);
     tank.stats.eaten++;
+    tank.stats.sharkFree = 0;
+    tank.lostFish = true;
+    tank.comeback = { active: true, quiet: 0 };
     if (typeof tank.onEaten === 'function') tank.onEaten();
     tank.shake = 0.35;
     chompBubbles(fish.x, fish.y);
@@ -173,7 +195,13 @@ export function createTank() {
     if (s.state === 'hunt') {
       const target = s.target;
       if (!target || !tank.fish.includes(target)) { startLeave(); return; }
-      if (tank.calmT >= CALM_ABORT_SECONDS) { startLeave(); return; }
+      if (!s.forced && tank.calmT >= CALM_ABORT_SECONDS) {
+        // Die Klasse war rechtzeitig leise: Fisch gerettet
+        tank.stats.rescued++;
+        if (typeof tank.onRescued === 'function') tank.onRescued();
+        startLeave();
+        return;
+      }
 
       const dx = target.x - s.x;
       const dy = target.y - s.y;
@@ -222,10 +250,32 @@ export function createTank() {
       tank.quietT = 0;
     }
 
+    // Zeit ohne gefressenen Fisch (zählt auch bei Lärm, solange der Hai niemanden erwischt)
+    if (listening) {
+      tank.stats.sharkFree += dt;
+      tank.stats.bestSharkFree = Math.max(tank.stats.bestSharkFree, tank.stats.sharkFree);
+    }
+
+    // Comeback: nach einem gefressenen Fisch 3 Minuten Ruhe am Stück
+    if (tank.comeback.active && listening) {
+      tank.comeback.quiet = loud ? 0 : tank.comeback.quiet + dt;
+      if (tank.comeback.quiet >= COMEBACK_SECONDS) {
+        tank.comeback.active = false;
+        tank.stats.comebacks++;
+        if (typeof tank.onComeback === 'function') tank.onComeback();
+      }
+    }
+
     // Neuer Fisch bei langer Ruhe
     if (tank.respawn && tank.fish.length < tank.maxFish && tank.quietT >= HATCH_AFTER_QUIET_SECONDS) {
       tank.fish.push(makeFish(true));
       tank.quietT = 0;
+      // Voller Teich: nach einem Verlust sind wieder alle Fische da
+      if (tank.fish.length >= tank.maxFish && tank.lostFish) {
+        tank.lostFish = false;
+        tank.stats.pondFull++;
+        if (typeof tank.onPondFull === 'function') tank.onPondFull();
+      }
     }
 
     // Hai losschicken
@@ -646,7 +696,6 @@ function drawShark(ctx, s, t) {
   ctx.quadraticCurveTo(L * 0.02, -h * 1.1, -L * 0.01, -h * 0.75);
   ctx.closePath();
   ctx.fill();
-
 
   // Körper
   const bodyPath = () => {

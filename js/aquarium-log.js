@@ -14,7 +14,8 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 const BADGE_TEXT = {
   quiet: '🏆 Ruhe-Rekord',
   fish: '🐠 Fisch-Rekord',
-  haifrei: '🛡️ Haifrei'
+  sharkfree: '🛡️ Haifrei-Rekord',
+  haifrei: '🛡️ Haifrei'   // ältere Aufzeichnungen
 };
 
 function el(tag, className, text) {
@@ -35,8 +36,9 @@ function svgEl(tag, attrs) {
 export function renderTrophies(records) {
   aquariumTrophies.innerHTML = '';
   trophyStates(records).forEach(t => {
-    const li = el('li', 'trophy-card');
+    const li = el('li', 'trophy-card' + (t.wide ? ' is-wide' : ''));
     li.dataset.tier = t.tier;
+    li.dataset.trophy = t.id;
 
     const cup = el('div', 'trophy-icon', t.icon);
     cup.setAttribute('aria-hidden', 'true');
@@ -124,6 +126,9 @@ export function renderSessions(aquarium) {
       '  ·  🤫 längste Ruhe ' + formatDuration(s.bestQuiet) +
       '  ·  🐠 ' + s.fishEnd + ' von ' + s.fishMax +
       '  ·  🦈 ' + s.eaten + (s.eaten === 1 ? ' Fisch gefressen' : ' Fische gefressen');
+    if (s.rescued) facts.textContent += '  ·  🛟 ' + s.rescued + ' gerettet';
+    if (s.comebacks) facts.textContent += '  ·  🌱 ' + s.comebacks + '× Comeback';
+    if (s.pondFull) facts.textContent += '  ·  🐟 ' + s.pondFull + '× Voller Teich';
     li.appendChild(facts);
 
     li.appendChild(buildChart(s));

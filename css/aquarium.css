@@ -363,3 +363,32 @@
   .trophy-detail { font-size: 0.7rem; }
   .aquarium-log-head .btn { width: 100%; }
 }
+
+/* ============================================================================
+   Platin-Pokal (Aquarium-Legende)
+   ============================================================================ */
+
+.trophy-card.is-wide { grid-column: 1 / -1; }
+.trophy-card[data-tier="platin"] {
+  --tier: #5d7f99;
+  border-color: #9bb7cc;
+  background: linear-gradient(120deg, #eef6fb 0%, #ffffff 35%, #e3f0f8 55%, #f7fbfe 80%, #dcecf6 100%);
+  background-size: 220% 100%;
+  animation: platinShimmer 5s ease-in-out infinite;
+}
+.trophy-card[data-tier="platin"] .trophy-tier {
+  background: linear-gradient(90deg, #5d7f99, #8fb3cc, #5d7f99);
+}
+.trophy-card[data-tier="platin"] .trophy-icon {
+  font-size: 3.2rem;
+  animation: trophyGlow 2.4s ease-in-out infinite;
+}
+.trophy-card.is-wide[data-tier="locked"] .trophy-icon { font-size: 2.6rem; }
+@keyframes platinShimmer {
+  0%, 100% { background-position: 0% 0; }
+  50%      { background-position: 100% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .trophy-card[data-tier="platin"],
+  .trophy-card[data-tier="platin"] .trophy-icon { animation: none; }
+}
