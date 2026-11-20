@@ -392,3 +392,104 @@
   .trophy-card[data-tier="platin"],
   .trophy-card[data-tier="platin"] .trophy-icon { animation: none; }
 }
+
+/* ============================================================================
+   Besondere Fische im Trophäenschrank (Sammelalbum)
+   ============================================================================ */
+
+.trophy-fish {
+  display: block;
+  width: 120px;
+  height: 70px;
+  margin: 0 auto 2px;
+}
+.trophy-fishname {
+  margin: 8px 0 0;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.trophy-card[data-tier="gold"] .trophy-fish,
+.trophy-card[data-tier="platin"] .trophy-fish {
+  animation: trophyGlow 2.8s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .trophy-card[data-tier="gold"] .trophy-fish,
+  .trophy-card[data-tier="platin"] .trophy-fish { animation: none; }
+}
+@media (max-width: 760px) {
+  .trophy-fish { width: 96px; height: 56px; }
+}
+
+/* ============================================================================
+   Ligen (Neuling / Allrounder / Champion / Frei)
+   ============================================================================ */
+
+.aquarium-hud-left { display: flex; align-items: flex-start; gap: 8px; }
+
+.aquarium-league { margin-top: 18px; }
+.league-buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.league-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 104px;
+  padding: 10px 14px;
+  font: inherit;
+  color: var(--ink);
+  background: #fbfaf5;
+  border: 2px solid var(--card-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+}
+.league-btn:hover { border-color: var(--ink-soft); }
+.league-btn:active { transform: scale(0.97); }
+.league-btn:focus-visible,
+.league-tab:focus-visible { outline: 2.5px solid var(--red-pen); outline-offset: 2px; }
+.league-btn.is-active {
+  border-color: var(--red-pen);
+  background: #fff5f2;
+  box-shadow: 0 0 0 2px rgba(200, 60, 40, 0.15);
+}
+.league-icon { font-size: 1.5rem; line-height: 1; }
+.league-name { font-weight: 700; font-size: 0.9rem; }
+.league-btn small { font-size: 0.72rem; color: var(--ink-soft); }
+
+.league-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.league-tab {
+  padding: 7px 14px;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--ink);
+  background: #fbfaf5;
+  border: 1.5px solid var(--card-border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.league-tab:hover { border-color: var(--ink-soft); }
+.league-tab.is-active { color: #fff; background: var(--ink); border-color: var(--ink); }
+.league-tab-count { margin-left: 6px; font-size: 0.75rem; font-weight: 600; opacity: 0.8; }
+
+.session-league {
+  padding: 2px 9px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ink);
+  background: #eef3f7;
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+}
+
+/* Neun Pokale: 3 x 3 auf großen Bildschirmen, Platin in der Breite darunter */
+@media (min-width: 761px) {
+  .trophy-shelf { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 760px) {
+  .aquarium-league-pill { display: none; }
+  .league-btn { flex: 1 1 calc(50% - 10px); min-width: 0; }
+}
+
+.aquarium-league > .field-label { display: block; font-weight: 700; }

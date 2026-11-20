@@ -6,9 +6,10 @@
 // ============================================================================
 
 import {
-  trophyStates, sessionList, parseList, formatDuration
+  trophyStates, sessionList, parseList, formatDuration, LEAGUES, LEAGUE_IDS, FREE_LEAGUE,
+  recordsFor, goldCount, isPlatin, TROPHIES
 } from './aquarium-records.js';
-import { aquariumTrophies, aquariumSessions } from './dom.js';
+import { aquariumTrophies, aquariumSessions, aquariumShelfTabs } from './dom.js';
 import { SPECIES, drawSpeciesPreview } from './aquarium-fish.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -126,6 +127,8 @@ export function renderSessions(aquarium) {
 
     const head = el('div', 'session-head');
     head.appendChild(el('strong', 'session-date', formatDate(s.start)));
+    if (s.league === FREE_LEAGUE) head.appendChild(el('span', 'session-league', '🎛️ Frei'));
+    else if (LEAGUES[s.league]) head.appendChild(el('span', 'session-league', LEAGUES[s.league].icon + ' ' + LEAGUES[s.league].name));
     (s.badges || []).forEach(b => {
       if (BADGE_TEXT[b]) head.appendChild(el('span', 'session-badge', BADGE_TEXT[b]));
     });
@@ -147,7 +150,21 @@ export function renderSessions(aquarium) {
   });
 }
 
-export function renderLog(aquarium) {
-  renderTrophies(aquarium && aquarium.records);
+// Beschriftung der Reiter: wie viele Pokale in der Liga auf Gold stehen (Platin = 👑 voll)
+function renderTabs(aquarium, shelfLeague) {
+  aquariumShelfTabs.forEach(tab => {
+    const id = tab.dataset.shelf;
+    const records = recordsFor(aquarium, id);
+    const count = tab.querySelector('.league-tab-count');
+    if (count) count.textContent = isPlatin(records) ? '💎' : goldCount(records) + '/' + TROPHIES.length;
+    const active = id === shelfLeague;
+    tab.classList.toggle('is-active', active);
+    tab.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+}
+
+export function renderLog(aquarium, shelfLeague = 'rookie') {
+  renderTabs(aquarium, shelfLeague);
+  renderTrophies(recordsFor(aquarium, shelfLeague));
   renderSessions(aquarium);
 }

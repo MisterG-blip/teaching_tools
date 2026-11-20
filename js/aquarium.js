@@ -29,7 +29,8 @@ import {
   aquariumMeterFill, aquariumMeterMark, aquariumThreshold,
   aquariumFishCount, aquariumFishDecrease, aquariumFishIncrease, aquariumRespawn,
   aquariumMicBtn, aquariumCalibrateBtn, aquariumSharkBtn, aquariumResetBtn, aquariumFullscreenBtn,
-  aquariumHint, aquariumError, aquariumLogHint, aquariumClearLogBtn
+  aquariumHint, aquariumError, aquariumLogHint, aquariumClearLogBtn,
+  aquariumLeagueInfo, aquariumLeagueHint, aquariumLeagueBtns, aquariumShelfTabs
 } from './dom.js';
 
 const view = document.getElementById('view-aquarium');
@@ -53,6 +54,9 @@ let micStarting = false;
 let level = 0;           // geglätteter Pegel 0..100 (nur zur Anzeige und für die Spielregeln)
 let rawLevel = 0;
 let threshold = DEFAULT_THRESHOLD;
+let league = 'rookie';                 // 'rookie' | 'allround' | 'champ' | 'free'
+let ambient = Rec.DEFAULT_AMBIENT;    // Raumpegel (durch Kalibrieren gemessen)
+let shelfLeague = 'rookie';            // Liga, deren Trophäenschrank angezeigt wird
 let calibration = null;  // { t, sum, n } während der Kalibrierung
 
 let rafId = null;
@@ -83,9 +87,18 @@ function currentAquarium() {
   const g = currentGroup();
   return (g && g.aquarium) || null;
 }
+// Rekorde einer Liga (leer im freien Modus)
+function recordsOf(l) {
+  return Rec.recordsFor(currentAquarium(), l);
+}
+// Rekorde der Liga, in der gerade gespielt wird
 function currentRecords() {
-  const a = currentAquarium();
-  return (a && a.records) || {};
+  return recordsOf(session ? session.league : league);
+}
+function leagueLabel(l) {
+  if (l === Rec.FREE_LEAGUE) return '🎛️ Frei';
+  const info = Rec.LEAGUES[l];
+  return info ? info.icon + ' ' + info.name : '';
 }
 function groupLabel() {
   const g = currentGroup();
@@ -105,7 +118,7 @@ function renderLogForActive() {
     aquariumLogHint.textContent = 'Pokale und Aufzeichnung gehören zur Gruppe ' + groupLabel() + ' und gelten für alle, die diese Gruppe nutzen.';
   }
   aquariumClearLogBtn.disabled = !g || !(auth && auth.currentUser);
-  renderLog(currentAquarium());
+  renderLog(currentAquarium(), shelfLeague);
   syncSpecials(true);
 }
 
@@ -148,11 +161,13 @@ function startSession() {
   session = {
     start: Date.now(),
     groupId: activeGroupId || null,
+    league,
     listen: 0,
     sampleT: 0,
     curve: [],
     ate: [],
     fishTier: 0,
+    quoteTier: 0,
     announced: { record: false, tiers: {}, platin: false }
   };
 }
@@ -172,6 +187,7 @@ function tickSession(dt) {
     session.sampleT -= 1;
     session.curve.push(level);
     session.fishTier = Math.max(session.fishTier, Rec.fishTierNow(session.listen, tank.fish.length, tank.maxFish));
+    session.quoteTier = Math.max(session.quoteTier, Rec.quoteTierNow(session.listen, tank.stats.quietTotal));
     checkLiveTrophies();   // einmal pro Sekunde reicht
   }
 }
@@ -182,47 +198,58 @@ function liveValues() {
   return {
     bestQuiet: st.bestQuiet, bestSharkFree: st.bestSharkFree, quietTotal: st.quietTotal,
     rescued: st.rescued, comebacks: st.comebacks, pondFull: st.pondFull,
-    fishTier: session ? session.fishTier : 0
+    fishTier: session ? session.fishTier : 0,
+    quoteTier: session ? session.quoteTier : 0
   };
 }
 
-function trophyToast(id, tier) {
+// Gibt es den besonderen Fisch zu diesem Pokal schon durch eine andere Liga?
+function fishUnlockedElsewhere(id, exceptLeague) {
+  return Rec.LEAGUE_IDS.some(l => {
+    if (l === exceptLeague) return false;
+    const r = recordsOf(l);
+    return id === 'platin' ? Rec.isPlatin(r) : Rec.trophyTiers(r)[id] > 0;
+  });
+}
+
+function trophyToast(id, tier, l) {
   const def = Rec.TROPHIES.find(t => t.id === id);
-  let text = MEDAL[tier] + ' ' + Rec.tierName(tier) + '-Pokal „' + def.title + '“!';
-  if (tier === 1) text += ' Neuer Fisch: ' + SPECIES[id].name;
+  let text = MEDAL[tier] + ' ' + Rec.tierName(tier) + '-Pokal „' + def.title + '“ (' + Rec.LEAGUES[l].name + ')!';
+  if (tier === 1 && !fishUnlockedElsewhere(id, l)) text += ' Neuer Fisch: ' + SPECIES[id].name;
   celebrate(text);
 }
 
-function platinToast() {
-  celebrate('💎 PLATIN! ' + groupLabel() + ' sind Aquarium-Legenden: alle Pokale auf Gold! Neuer Fisch: ' + SPECIES.platin.name);
+function platinToast(l) {
+  let text = '💎 PLATIN in der ' + Rec.LEAGUES[l].name + '-Liga! ' + groupLabel() + ' sind Aquarium-Legenden: alle Pokale auf Gold!';
+  if (!fishUnlockedElsewhere('platin', l)) text += ' Neuer Fisch: ' + SPECIES.platin.name;
+  celebrate(text);
 }
 
-// ---------- Besondere Fische: einer pro Pokal ----------
+// ---------- Besondere Fische: einer pro Pokal, höchste Stufe aus allen Ligen ----------
 
-function specialList(records) {
-  const tiers = Rec.trophyTiers(records);
-  const list = Rec.TROPHIES.filter(t => tiers[t.id] > 0).map(t => ({ id: t.id, tier: tiers[t.id] }));
-  if (Rec.isPlatin(records)) list.push({ id: 'platin', tier: 3 });
-  return list;
-}
-
-// Gespeicherte Pokale plus das, was in der laufenden Sitzung schon erspielt wurde
+// Gespeicherte Pokale aller Ligen plus das, was in der laufenden Sitzung schon erspielt wurde
 function syncSpecials(silent) {
-  const stored = currentRecords();
-  const records = session ? Rec.mergeLive(stored, liveValues()) : stored;
-  tank.setSpecials(specialList(records), silent);
+  const lists = Rec.LEAGUE_IDS.map(l => {
+    const stored = recordsOf(l);
+    return (session && session.league === l) ? Rec.mergeLive(stored, liveValues()) : stored;
+  });
+  const { tiers, platin } = Rec.combineTiers(lists);
+  const list = Rec.TROPHIES.filter(t => tiers[t.id] > 0).map(t => ({ id: t.id, tier: tiers[t.id] }));
+  if (platin) list.push({ id: 'platin', tier: 3 });
+  tank.setSpecials(list, silent);
 }
 
 // Meldet Rekorde und Pokale schon während der Sitzung, nicht erst beim Speichern
 function checkLiveTrophies() {
-  if (!session) return;
+  if (!session || session.league === Rec.FREE_LEAGUE) return;   // im freien Modus gibt es keine Pokale
+  const l = session.league;
   const a = session.announced;
   const stored = currentRecords();
   const best = tank.stats.bestQuiet;
 
   if (!a.record && (stored.bestQuiet || 0) >= Rec.QUIET_RECORD_MIN_SECONDS && best > stored.bestQuiet) {
     a.record = true;
-    celebrate('🏆 Neuer Ruhe-Rekord für ' + groupLabel() + ': ' + formatTime(best) + '!');
+    celebrate('🏆 Neuer Ruhe-Rekord (' + Rec.LEAGUES[l].name + ') für ' + groupLabel() + ': ' + formatTime(best) + '!');
   }
 
   const before = Rec.trophyTiers(stored);
@@ -231,12 +258,12 @@ function checkLiveTrophies() {
   Object.keys(now).forEach(id => {
     if (now[id] > Math.max(before[id], a.tiers[id] || 0)) {
       a.tiers[id] = now[id];
-      trophyToast(id, now[id]);
+      trophyToast(id, now[id], l);
     }
   });
   if (!a.platin && Rec.isPlatin(merged) && !Rec.isPlatin(stored)) {
     a.platin = true;
-    platinToast();
+    platinToast(l);
   }
   syncSpecials(false);
 }
@@ -259,6 +286,8 @@ function endSession(announce) {
     comebacks: tank.stats.comebacks,
     pondFull: tank.stats.pondFull,
     fishTier: s.fishTier,
+    quoteTier: s.quoteTier,
+    league: s.league,
     fishEnd: tank.fish.length,
     fishMax: tank.maxFish,
     threshold,
@@ -267,11 +296,12 @@ function endSession(announce) {
   });
 
   if (!Rec.isSavable(built)) {
-    if (announce) toast('Sitzung zu kurz zum Speichern (unter 1 Minute).');
+    // Ganz kurze Sitzungen (z. B. direkt nach dem Kalibrieren) bleiben ohne Meldung
+    if (announce && built.dur >= 10) toast('Sitzung zu kurz zum Speichern (unter 1 Minute).');
     return;
   }
 
-  const summary = formatTime(built.dur) + ' Min. · längste Ruhe ' + formatTime(built.bestQuiet) +
+  const summary = leagueLabel(built.league) + ' · ' + formatTime(built.dur) + ' Min. · längste Ruhe ' + formatTime(built.bestQuiet) +
     ' · ' + built.fishEnd + ' von ' + built.fishMax + ' Fischen';
 
   if (!canSave(s.groupId)) {
@@ -281,15 +311,15 @@ function endSession(announce) {
   if (announce) toast('Sitzung gespeichert: ' + summary);
 
   // Pokale, die erst jetzt feststehen (z. B. Fische am Ende), und Platin melden
-  if (announce) {
-    const prior = ((groups[s.groupId] || {}).aquarium || {}).records || {};
+  if (announce && s.league !== Rec.FREE_LEAGUE) {
+    const prior = Rec.recordsFor((groups[s.groupId] || {}).aquarium, s.league);
     const after = Rec.applySessionToRecords(prior, built);
     const afterTiers = Rec.trophyTiers(after);
     const beforeTiers = Rec.trophyTiers(prior);
     Object.keys(afterTiers).forEach(id => {
-      if (afterTiers[id] > Math.max(beforeTiers[id], s.announced.tiers[id] || 0)) trophyToast(id, afterTiers[id]);
+      if (afterTiers[id] > Math.max(beforeTiers[id], s.announced.tiers[id] || 0)) trophyToast(id, afterTiers[id], s.league);
     });
-    if (!s.announced.platin && Rec.isPlatin(after) && !Rec.isPlatin(prior)) platinToast();
+    if (!s.announced.platin && Rec.isPlatin(after) && !Rec.isPlatin(prior)) platinToast(s.league);
   }
 
   persistSession(s.groupId, built);
@@ -298,10 +328,19 @@ function endSession(announce) {
 async function persistSession(groupId, built) {
   const base = 'groups/' + groupId + '/aquarium/';
   try {
-    const prior = ((groups[groupId] || {}).aquarium || {}).records || null;
-    built.badges = Rec.sessionBadges(prior, built);
+    const aq = (groups[groupId] || {}).aquarium || null;
+    const l = built.league;
+    const inLeague = !!Rec.LEAGUES[l];   // im freien Modus gibt es keine Rekorde
+
+    built.badges = inLeague ? Rec.sessionBadges(Rec.recordsFor(aq, l), built) : [];
     await set(ref(db, base + 'sessions/s' + built.start), built);
-    await runTransaction(ref(db, base + 'records'), cur => Rec.applySessionToRecords(cur, built));
+
+    if (inLeague) {
+      // Ältere Rekorde ohne Liga gehören zur Neuling-Liga: beim ersten Schreiben übernehmen
+      const hasOwn = !!(aq && aq.leagues && aq.leagues[l] && aq.leagues[l].records);
+      const seed = (l === 'rookie' && !hasOwn && aq && aq.records) ? aq.records : null;
+      await runTransaction(ref(db, base + 'leagues/' + l + '/records'), cur => Rec.applySessionToRecords(cur || seed, built));
+    }
 
     // Alte Sitzungen aufräumen
     const aquarium = (groups[groupId] || {}).aquarium;
@@ -329,6 +368,51 @@ function restartTank() {
   endSession(true);
   tank.reset(fishTarget());
   startSession();
+}
+
+// ---------- Liga ----------
+
+function applyLeagueThreshold() {
+  if (league === Rec.FREE_LEAGUE) return;
+  threshold = Rec.leagueThreshold(league, ambient);
+  aquariumThreshold.value = threshold;
+  positionMark();
+}
+
+function syncLeagueUI() {
+  aquariumLeagueBtns.forEach(btn => {
+    const active = btn.dataset.league === league;
+    btn.classList.toggle('is-active', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+  aquariumLeagueInfo.textContent = leagueLabel(league);
+  aquariumShelfTabs.forEach(tab => {
+    const active = tab.dataset.shelf === shelfLeague;
+    tab.classList.toggle('is-active', active);
+    tab.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+  if (league === Rec.FREE_LEAGUE) {
+    aquariumLeagueHint.textContent = 'Freier Modus: eigene Grenze per Regler (' + threshold + '). Sitzungen werden aufgezeichnet, es gibt aber keine Pokale.';
+  } else {
+    const info = Rec.LEAGUES[league];
+    aquariumLeagueHint.textContent = info.icon + ' ' + info.name + ': Grenze ' + threshold + ' (' + Math.round(info.pct * 100) +
+      ' % der Spanne über dem Raumpegel). Pokale gibt es in dieser Liga' + (ambient === Rec.DEFAULT_AMBIENT ? '. Tipp: erst kalibrieren, damit die Grenze zum Raum passt.' : '.');
+  }
+}
+
+// Neue Liga = neue Regeln = neue Sitzung und frisches Becken
+function setLeague(next) {
+  if (next === league) return;
+  endSession(true);                 // alte Sitzung noch mit der alten Liga speichern
+  league = next;
+  if (league !== Rec.FREE_LEAGUE) {
+    shelfLeague = league;
+    applyLeagueThreshold();
+  }
+  tank.reset(fishTarget());
+  startSession();
+  syncLeagueUI();
+  renderLogForActive();
 }
 
 // ---------- Mikrofon ----------
@@ -429,12 +513,24 @@ function runCalibration(dt) {
 
   if (calibration.t >= CALIBRATE_SECONDS) {
     const avg = calibration.sum / Math.max(1, calibration.n);
-    threshold = clamp(Math.round(avg + 20), 20, 95);
-    aquariumThreshold.value = threshold;
+    ambient = clamp(Math.round(avg), 5, 70);
     calibration = null;
     syncButtons();
-    positionMark();
-    setHint('Kalibriert: Raumpegel ca. ' + Math.round(avg) + ', Grenze auf ' + threshold + ' gesetzt. Per Regler jederzeit änderbar.');
+    if (league === Rec.FREE_LEAGUE) {
+      threshold = clamp(Math.round(avg + 20), 20, 95);
+      aquariumThreshold.value = threshold;
+      positionMark();
+      setHint('Kalibriert: Raumpegel ca. ' + ambient + ', Grenze auf ' + threshold + ' gesetzt.');
+    } else {
+      // Die Liga-Grenzen hängen am Raumpegel: neue Grenze = neue Sitzung
+      endSession(true);
+      applyLeagueThreshold();
+      tank.reset(fishTarget());
+      startSession();
+      setHint('Kalibriert: Raumpegel ca. ' + ambient + '. Grenzen: ' +
+        Rec.LEAGUE_IDS.map(l => Rec.LEAGUES[l].name + ' ' + Rec.leagueThreshold(l, ambient)).join(', ') + '.');
+    }
+    syncLeagueUI();
   }
 }
 
@@ -581,9 +677,28 @@ document.addEventListener('webkitfullscreenchange', syncFullscreenButton);
 if (!aquariumStage.requestFullscreen && !aquariumStage.webkitRequestFullscreen) aquariumFullscreenBtn.hidden = true;
 
 aquariumThreshold.addEventListener('input', () => {
-  threshold = parseInt(aquariumThreshold.value, 10) || DEFAULT_THRESHOLD;
+  const value = parseInt(aquariumThreshold.value, 10) || DEFAULT_THRESHOLD;
+  if (league !== Rec.FREE_LEAGUE) {
+    // Eigene Grenze = freier Modus. Die laufende Liga-Sitzung wird sauber beendet.
+    endSession(true);
+    league = Rec.FREE_LEAGUE;
+    threshold = value;
+    tank.reset(fishTarget());
+    startSession();
+    renderLogForActive();
+  } else {
+    threshold = value;
+  }
   positionMark();
+  syncLeagueUI();
 });
+
+aquariumLeagueBtns.forEach(btn => btn.addEventListener('click', () => setLeague(btn.dataset.league)));
+aquariumShelfTabs.forEach(tab => tab.addEventListener('click', () => {
+  shelfLeague = tab.dataset.shelf;
+  syncLeagueUI();
+  renderLogForActive();
+}));
 
 aquariumClearLogBtn.addEventListener('click', () => {
   const g = currentGroup();
@@ -609,10 +724,11 @@ new MutationObserver(syncVisibility).observe(view, { attributes: true, attribute
 // Beim Verlassen der Seite das Mikrofon sicher freigeben
 window.addEventListener('pagehide', stopMic);
 
-threshold = parseInt(aquariumThreshold.value, 10) || DEFAULT_THRESHOLD;
+applyLeagueThreshold();   // Startliga: Neuling
 tank.respawn = aquariumRespawn.checked;
 tank.reset(fishTarget());
 positionMark();
 syncButtons();
-renderLog(null); // leer; echte Daten kommen über loadAquariumFromGroup()
+syncLeagueUI();
+renderLog(null, shelfLeague); // leer; echte Daten kommen über loadAquariumFromGroup()
 syncVisibility();

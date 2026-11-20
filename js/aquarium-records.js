@@ -4,12 +4,18 @@
 //          Aufzeichnung der Sitzungen im Klassen-Aquarium.
 //
 // Gespeichert wird pro Gruppe unter groups/{id}/aquarium:
-//   records  - { bestQuiet, mostFish:{alive,max,at}, bestSharkFree, totalQuiet,
-//                rescued, comeback, pond }
+//   leagues/{liga}/records - { bestQuiet, mostFish:{alive,max,at}, bestSharkFree, totalQuiet,
+//                              rescued, comeback, pond, fishTier, quoteTier, sessions }
+//                            (je Liga eigene Rekorde: rookie, allround, champ)
 //   sessions - { "s<Startzeit>": Sitzung }   (nur die letzten MAX_SESSIONS)
+//   records  - ältere Daten ohne Liga; gelten als Neuling-Liga
 //
 // Eine Sitzung enthält nur Zahlen: Dauer, Ruhezeit, Fische, Lautstärke-Verlauf.
 // Es wird KEIN Ton aufgezeichnet.
+//
+// Ligen: Die Lautstärke-Grenze bestimmt die Liga (Neuling 75 %, Allrounder 50 %,
+// Champion 30 % der Spanne zwischen Raumpegel und Maximum). Je strenger die
+// Grenze, desto höher die Liga. Jede Liga hat ihren eigenen Trophäenschrank.
 //
 // Pokale: Jeder Pokal hat 3 Stufen (Bronze, Silber, Gold). Den Platin-Pokal
 // gibt es, wenn ALLE anderen Pokale auf Gold stehen.
@@ -29,6 +35,69 @@ export const FISH_TIER_RULES = [
   { seconds: 600, ratio: 0.75, text: 'Silber: nach 10 Min. noch mindestens 75 % der Fische' },
   { seconds: 900, ratio: 1,    text: 'Gold: nach 15 Min. noch alle Fische' }
 ];
+
+// ---------- Ligen ----------
+
+export const LEAGUES = {
+  rookie:   { id: 'rookie',   name: 'Neuling',    icon: '🐣', pct: 0.70 },
+  allround: { id: 'allround', name: 'Allrounder', icon: '🐬', pct: 0.4 },
+  champ:    { id: 'champ',    name: 'Champion',   icon: '👑', pct: 0.2 }
+};
+export const LEAGUE_IDS = ['rookie', 'allround', 'champ'];
+export const FREE_LEAGUE = 'free';          // eigene Grenze per Regler: keine Pokale
+export const DEFAULT_AMBIENT = 10;          // Raumpegel, solange nicht kalibriert wurde
+
+/**
+ * Lautstärke-Grenze einer Liga. Die Prozent beziehen sich auf die Spanne
+ * zwischen Raumpegel (ambient) und Maximum (100): je kleiner, desto strenger.
+ */
+export function leagueThreshold(league, ambient = DEFAULT_AMBIENT) {
+  const l = LEAGUES[league];
+  if (!l) return null;
+  const a = Math.max(5, Math.min(70, ambient));
+  return Math.max(15, Math.min(98, Math.round(a + l.pct * (100 - a))));
+}
+
+// Rekorde einer Liga. Ältere Aufzeichnungen ohne Liga zählen zur Neuling-Liga.
+export function recordsFor(aquarium, league) {
+  if (!aquarium || !LEAGUES[league]) return {};
+  const own = aquarium.leagues && aquarium.leagues[league] && aquarium.leagues[league].records;
+  if (own) return own;
+  if (league === 'rookie' && aquarium.records) return aquarium.records;
+  return {};
+}
+
+// Höchste Stufe je Pokal über alle Ligen (bestimmt, welche besonderen Fische schwimmen)
+// recordsList: Rekorde je Liga. Rückgabe: { tiers: {id: 0-3}, platin: boolean }
+export function combineTiers(recordsList) {
+  const tiers = {};
+  let platin = false;
+  recordsList.forEach(r => {
+    const t = trophyTiers(r);
+    Object.keys(t).forEach(id => { tiers[id] = Math.max(tiers[id] || 0, t[id]); });
+    if (isPlatin(r)) platin = true;
+  });
+  return { tiers, platin };
+}
+
+// Flüsterprofi: Anteil der Zeit unter der Grenze, gemessen ab QUOTE_MIN_SECONDS Hörzeit
+export const QUOTE_MIN_SECONDS = 600;
+export const QUOTE_RULES = [
+  { ratio: 0.70, text: 'Bronze: nach 10 Min. mindestens 70 % der Zeit ruhig' },
+  { ratio: 0.85, text: 'Silber: nach 10 Min. mindestens 85 % der Zeit ruhig' },
+  { ratio: 0.95, text: 'Gold: nach 10 Min. mindestens 95 % der Zeit ruhig' }
+];
+
+export function quoteTierNow(listenSeconds, quietSeconds) {
+  if (listenSeconds < QUOTE_MIN_SECONDS) return 0;
+  const ratio = quietSeconds / listenSeconds;
+  let tier = 0;
+  QUOTE_RULES.forEach((rule, i) => { if (ratio >= rule.ratio) tier = i + 1; });
+  return tier;
+}
+
+// Stammgast: so lang muss eine Sitzung mindestens sein, damit sie zählt
+export const STAMMGAST_MIN_SECONDS = 300;
 
 // Stufe (0-3), die ein Becken zu diesem Zeitpunkt erfüllt
 export function fishTierNow(listenSeconds, alive, max) {
@@ -76,6 +145,7 @@ export const tierName = tier => TIER_NAMES[tier] || '';
 const secondsStep = diff => formatDuration(diff);
 const longStep = diff => formatLongDuration(diff);
 const countStep = diff => diff + ' Mal';
+const sessionsStep = diff => diff + (diff === 1 ? ' Sitzung' : ' Sitzungen');
 
 // Ältere Aufzeichnungen kannten nur "haifrei" = Anzahl Sitzungen mit mindestens 5 Min.
 function sharkFreeOf(r) {
@@ -84,6 +154,7 @@ function sharkFreeOf(r) {
 }
 
 export const TROPHIES = [
+  // Reihe 1: Ruhe
   {
     id: 'quiet', icon: '🏆', title: 'Ruhe-Meister',
     tiers: [120, 300, 600],
@@ -93,20 +164,12 @@ export const TROPHIES = [
     detail: 'Längste Ruhe am Stück'
   },
   {
-    id: 'fish', icon: '🐠', title: 'Fischfreunde',
+    id: 'quote', icon: '🤫', title: 'Flüsterprofi',
     tiers: [1, 2, 3],
-    value: r => r.fishTier || 0,
-    show: (v, r) => (r.mostFish ? 'Bester Teich: ' + r.mostFish.alive + ' von ' + r.mostFish.max : 'Noch kein Rekord'),
-    nextText: v => FISH_TIER_RULES[v].text,
-    detail: 'Fische retten (ein Fisch pro Schüler)'
-  },
-  {
-    id: 'sharkfree', icon: '🛡️', title: 'Haifrei',
-    tiers: [300, 600, 1200],
-    value: r => sharkFreeOf(r),
-    show: v => (v > 0 ? 'Rekord: ' + formatDuration(v) : 'Noch nicht geschafft'),
-    step: secondsStep,
-    detail: 'Längste Zeit ohne gefressenen Fisch'
+    value: r => r.quoteTier || 0,
+    show: v => (v > 0 ? 'Mind. ' + Math.round(QUOTE_RULES[v - 1].ratio * 100) + ' % der Zeit ruhig' : 'Noch nicht geschafft'),
+    nextText: v => QUOTE_RULES[v].text,
+    detail: 'Anteil ruhiger Zeit (ab 10 Min.)'
   },
   {
     id: 'total', icon: '🌊', title: 'Ruhe-Konto',
@@ -115,6 +178,15 @@ export const TROPHIES = [
     show: v => (v > 0 ? 'Gesamt: ' + formatLongDuration(v) : 'Noch keine Ruhe gesammelt'),
     step: longStep,
     detail: 'Gesammelte Ruhe über alle Sitzungen'
+  },
+  // Reihe 2: Hai
+  {
+    id: 'sharkfree', icon: '🛡️', title: 'Haifrei',
+    tiers: [300, 600, 1200],
+    value: r => sharkFreeOf(r),
+    show: v => (v > 0 ? 'Rekord: ' + formatDuration(v) : 'Noch nicht geschafft'),
+    step: secondsStep,
+    detail: 'Längste Zeit ohne gefressenen Fisch'
   },
   {
     id: 'rescued', icon: '🛟', title: 'Gerettet',
@@ -132,6 +204,15 @@ export const TROPHIES = [
     step: countStep,
     detail: '3 Min. Ruhe nach einem gefressenen Fisch'
   },
+  // Reihe 3: Becken und Dauer
+  {
+    id: 'fish', icon: '🐠', title: 'Fischfreunde',
+    tiers: [1, 2, 3],
+    value: r => r.fishTier || 0,
+    show: (v, r) => (r.mostFish ? 'Bester Teich: ' + r.mostFish.alive + ' von ' + r.mostFish.max : 'Noch kein Rekord'),
+    nextText: v => FISH_TIER_RULES[v].text,
+    detail: 'Fische retten (ein Fisch pro Schüler)'
+  },
   {
     id: 'pond', icon: '🐟', title: 'Voller Teich',
     tiers: [1, 3, 10],
@@ -139,6 +220,14 @@ export const TROPHIES = [
     show: v => (v > 0 ? v + '× wieder voll' : 'Noch nie wieder voll'),
     step: countStep,
     detail: 'Alle Fische nach einem Verlust wieder da'
+  },
+  {
+    id: 'regular', icon: '📅', title: 'Stammgast',
+    tiers: [3, 10, 30],
+    value: r => r.sessions || 0,
+    show: v => (v > 0 ? v + (v === 1 ? ' Sitzung' : ' Sitzungen') : 'Noch keine Sitzung'),
+    step: sessionsStep,
+    detail: 'Sitzungen ab 5 Min. in dieser Liga'
   }
 ];
 
@@ -197,7 +286,7 @@ export function trophyStates(records) {
 
 /**
  * @param {object} stored  gespeicherte Rekorde der Gruppe
- * @param {object} live    { bestQuiet, bestSharkFree, quietTotal, rescued, comebacks, pondFull, fishTier }
+ * @param {object} live    { bestQuiet, bestSharkFree, quietTotal, rescued, comebacks, pondFull, fishTier, quoteTier }
  * @returns Rekorde, wie sie nach Abschluss der Sitzung aussähen
  */
 export function mergeLive(stored, live) {
@@ -209,6 +298,7 @@ export function mergeLive(stored, live) {
   r.comeback = (r.comeback || 0) + (live.comebacks || 0);
   r.pond = (r.pond || 0) + (live.pondFull || 0);
   r.fishTier = Math.max(r.fishTier || 0, live.fishTier || 0);
+  r.quoteTier = Math.max(r.quoteTier || 0, live.quoteTier || 0);
   return r;
 }
 
@@ -232,7 +322,7 @@ export function downsample(values, max = CURVE_POINTS) {
 
 /**
  * @param {object} p  { start, dur, quiet, bestQuiet, bestSharkFree, eaten, rescued, comebacks,
- *                      pondFull, fishTier, fishEnd, fishMax, threshold, curve:number[] (1 Wert/Sekunde),
+ *                      pondFull, fishTier, quoteTier, league, fishEnd, fishMax, threshold, curve:number[] (1 Wert/Sekunde),
  *                      ate:number[] (Sekunden) }
  * @returns Sitzung in gespeicherter Form (Verlauf und Zeitpunkte als Text)
  */
@@ -248,6 +338,8 @@ export function buildSession(p) {
     comebacks: p.comebacks || 0,
     pondFull: p.pondFull || 0,
     fishTier: p.fishTier || 0,
+    quoteTier: p.quoteTier || 0,
+    league: p.league || FREE_LEAGUE,
     fishEnd: p.fishEnd,
     fishMax: p.fishMax,
     threshold: Math.round(p.threshold),
@@ -292,7 +384,7 @@ export function sessionBadges(cur, session) {
 
 // Wird als Transaktion auf groups/{id}/aquarium/records ausgeführt (cur kann null sein)
 export function applySessionToRecords(cur, session) {
-  const r = Object.assign({ bestQuiet: 0, totalQuiet: 0, rescued: 0, comeback: 0, pond: 0 }, cur || {});
+  const r = Object.assign({ bestQuiet: 0, totalQuiet: 0, rescued: 0, comeback: 0, pond: 0, sessions: 0 }, cur || {});
   if (session.bestQuiet > r.bestQuiet) {
     r.bestQuiet = session.bestQuiet;
     r.bestQuietAt = session.start;
@@ -306,6 +398,8 @@ export function applySessionToRecords(cur, session) {
   r.comeback = (r.comeback || 0) + (session.comebacks || 0);
   r.pond = (r.pond || 0) + (session.pondFull || 0);
   r.fishTier = Math.max(r.fishTier || 0, session.fishTier || 0);
+  r.quoteTier = Math.max(r.quoteTier || 0, session.quoteTier || 0);
+  if (session.dur >= STAMMGAST_MIN_SECONDS) r.sessions = (r.sessions || 0) + 1;
   r.updatedAt = Date.now();
   return r;
 }

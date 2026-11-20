@@ -16,6 +16,8 @@ export const TIER_SCALE = [0, 1, 1.15, 1.3];
 // id = ID des Pokals aus aquarium-records.js ('platin' für die Aquarium-Legende)
 export const SPECIES = {
   quiet:     { name: 'Clownfisch',        size: 40 },
+  quote:     { name: 'Seepferdchen',      size: 36, previewScale: 0.78 },
+  regular:   { name: 'Papageifisch',      size: 42 },
   fish:      { name: 'Doktorfisch',       size: 42 },
   sharkfree: { name: 'Kugelfisch',        size: 38 },
   total:     { name: 'Kaiserfisch',       size: 40 },
@@ -236,6 +238,42 @@ const SPEC = {
     }
   },
 
+  // Papageifisch: grün mit bunten Flecken und Schnabel
+  regular: {
+    body: '#2fc48d', fin: '#ff7fae', tail: '#7a5cff', tailSpread: 0.7, outline: '#1d8f68',
+    decorate(ctx, s, rx, ry) {
+      ctx.fillStyle = '#ff7fae';
+      [[-0.1, -0.35, 0.22], [-0.5, 0.2, 0.25], [0.2, 0.3, 0.18], [-0.75, -0.3, 0.16]].forEach(([x, y, r]) => {
+        ctx.beginPath();
+        ctx.ellipse(s * x, ry * y * 1.6, s * r, s * r * 0.7, 0.4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.fillStyle = '#7a5cff';
+      [[0.25, -0.5], [-0.3, 0.5], [-0.85, 0.05]].forEach(([x, y]) => {
+        ctx.beginPath();
+        ctx.arc(s * x, ry * y, s * 0.1, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    },
+    front(ctx, s, rx, ry) {
+      // Schnabel
+      ctx.fillStyle = '#fff6df';
+      ctx.strokeStyle = '#c9b68a';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(rx * 0.82, -ry * 0.28);
+      ctx.quadraticCurveTo(rx * 1.12, -ry * 0.2, rx * 1.1, ry * 0.18);
+      ctx.quadraticCurveTo(rx * 1.0, ry * 0.36, rx * 0.82, ry * 0.3);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(rx * 0.88, ry * 0.04);
+      ctx.lineTo(rx * 1.08, ry * 0.04);
+      ctx.stroke();
+    }
+  },
+
   // Königsfisch (Platin): golden, mit Krone
   platin: {
     body(ctx, s, rx, ry) {
@@ -359,6 +397,92 @@ function drawPuffer(ctx, s, o) {
   ctx.stroke();
 }
 
+// Seepferdchen: aufrecht, ringelt den Schwanz, wiegt sich sanft
+function drawSeahorse(ctx, s, o) {
+  const sway = Math.sin(o.phase * 0.7) * s * 0.06;
+
+  // Wirbelsäule als Bézierkurve (Kopf oben, Schwanz unten eingerollt)
+  const P = [
+    { x: s * 0.10, y: -s * 0.80 },
+    { x: s * 0.62, y: -s * 0.15 },
+    { x: -s * 0.35, y: s * 0.40 },
+    { x: s * 0.02, y: s * 0.95 }
+  ];
+  const bez = t => {
+    const u = 1 - t;
+    return {
+      x: u * u * u * P[0].x + 3 * u * u * t * P[1].x + 3 * u * t * t * P[2].x + t * t * t * P[3].x + sway * t,
+      y: u * u * u * P[0].y + 3 * u * u * t * P[1].y + 3 * u * t * t * P[2].y + t * t * t * P[3].y
+    };
+  };
+
+  // Rückenflosse (zarter Fächer, flattert)
+  ctx.strokeStyle = 'rgba(255,200,230,0.85)';
+  ctx.lineWidth = Math.max(1.5, s * 0.05);
+  ctx.lineCap = 'round';
+  for (let i = 0; i < 6; i++) {
+    const p = bez(0.28 + i * 0.06);
+    const flutter = Math.sin(o.phase * 3 + i) * s * 0.06;
+    ctx.beginPath();
+    ctx.moveTo(p.x - s * 0.18, p.y);
+    ctx.lineTo(p.x - s * 0.5 + flutter, p.y - s * 0.06);
+    ctx.stroke();
+  }
+
+  // Körper aus Kreisen entlang der Kurve; Radius wird zum Schwanz hin kleiner
+  const N = 34;
+  for (let i = 0; i <= N; i++) {
+    const t = i / N;
+    const p = bez(t);
+    const bulge = Math.exp(-Math.pow((t - 0.28) / 0.22, 2)) * s * 0.16;
+    const r = s * (0.36 - 0.26 * t) + bulge;
+    ctx.fillStyle = i % 4 < 2 ? '#f6a23c' : '#e9892a';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, Math.max(2, r), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // Schwanzspitze eingerollt
+  const tip = bez(1);
+  ctx.strokeStyle = '#e9892a';
+  ctx.lineWidth = s * 0.1;
+  ctx.beginPath();
+  ctx.arc(tip.x - s * 0.12, tip.y + s * 0.02, s * 0.14, -0.5, Math.PI * 1.4);
+  ctx.stroke();
+
+  // Bauchpunkte
+  ctx.fillStyle = 'rgba(255,240,200,0.8)';
+  for (let i = 0; i < 5; i++) {
+    const p = bez(0.12 + i * 0.1);
+    ctx.beginPath();
+    ctx.arc(p.x + s * 0.12, p.y, s * 0.035, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Kopf mit Schnauze und Krönchen
+  const head = bez(0);
+  ctx.fillStyle = '#f6a23c';
+  ctx.beginPath();
+  ctx.arc(head.x + s * 0.02, head.y - s * 0.12, s * 0.36, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(head.x + s * 0.2, head.y - s * 0.22);
+  ctx.lineTo(head.x + s * 0.88, head.y - s * 0.16);
+  ctx.quadraticCurveTo(head.x + s * 0.98, head.y - s * 0.1, head.x + s * 0.88, head.y - s * 0.04);
+  ctx.lineTo(head.x + s * 0.2, head.y + s * 0.06);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#e9892a';
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    ctx.moveTo(head.x - s * 0.18 + i * s * 0.16, head.y - s * 0.42);
+    ctx.lineTo(head.x - s * 0.1 + i * s * 0.16, head.y - s * 0.62);
+    ctx.lineTo(head.x - s * 0.02 + i * s * 0.16, head.y - s * 0.44);
+    ctx.closePath();
+    ctx.fill();
+  }
+  eye(ctx, s, head.x + s * 0.1, head.y - s * 0.2, o.panic, 0.17);
+}
+
 /**
  * Zeichnet eine besondere Art um den Ursprung, nach rechts schauend.
  * @param {string} id  Pokal-ID ('quiet', ..., 'platin')
@@ -368,6 +492,7 @@ function drawPuffer(ctx, s, o) {
 export function drawSpecial(ctx, id, s, o) {
   const opts = { phase: o.phase || 0, panic: o.panic || 0, t: o.t || 0 };
   if (id === 'sharkfree') drawPuffer(ctx, s, opts);
+  else if (id === 'quote') drawSeahorse(ctx, s, opts);
   else if (SPEC[id]) bodyFish(ctx, s, opts, SPEC[id]);
 }
 
@@ -386,7 +511,7 @@ export function drawSpeciesPreview(canvas, id, tier, unlocked) {
 
   const spec = SPECIES[id];
   if (!spec) return;
-  const s = (spec.size * 0.75) * (unlocked ? TIER_SCALE[Math.max(1, tier)] / 1.3 : 0.8);
+  const s = (spec.size * 0.75 * (spec.previewScale || 1)) * (unlocked ? TIER_SCALE[Math.max(1, tier)] / 1.3 : 0.8);
 
   ctx.save();
   ctx.translate(W / 2 + 4, H / 2);

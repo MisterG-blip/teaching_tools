@@ -508,7 +508,10 @@
           <div class="aquarium-frame">
             <canvas id="aquariumCanvas" role="img" aria-label="Aquarium mit Fischen und einem Hai"></canvas>
             <div class="aquarium-hud">
-              <span class="aquarium-pill" id="aquariumFishInfo">🐠 8 / 8</span>
+              <div class="aquarium-hud-left">
+                <span class="aquarium-pill" id="aquariumFishInfo">🐠 8 / 8</span>
+                <span class="aquarium-pill aquarium-league-pill" id="aquariumLeagueInfo">🐣 Neuling</span>
+              </div>
               <span class="aquarium-pill aquarium-status" id="aquariumStatus" aria-live="polite">Mikrofon starten, damit der Hai mithören kann</span>
               <span class="aquarium-pill" id="aquariumBest">🤫 Längste Ruhe 0:00</span>
             </div>
@@ -531,6 +534,25 @@
           <button type="button" class="btn btn-ghost" id="aquariumFullscreenBtn">⛶ Vollbild</button>
         </div>
 
+        <div class="aquarium-league" role="group" aria-label="Liga wählen">
+          <span class="field-label">Liga</span>
+          <div class="league-buttons">
+            <button type="button" class="league-btn is-active" data-league="rookie" aria-pressed="true">
+              <span class="league-icon">🐣</span><span class="league-name">Neuling</span><small>75 %</small>
+            </button>
+            <button type="button" class="league-btn" data-league="allround" aria-pressed="false">
+              <span class="league-icon">🐬</span><span class="league-name">Allrounder</span><small>50 %</small>
+            </button>
+            <button type="button" class="league-btn" data-league="champ" aria-pressed="false">
+              <span class="league-icon">👑</span><span class="league-name">Champion</span><small>30 %</small>
+            </button>
+            <button type="button" class="league-btn" data-league="free" aria-pressed="false">
+              <span class="league-icon">🎛️</span><span class="league-name">Frei</span><small>Regler</small>
+            </button>
+          </div>
+          <p class="hint" id="aquariumLeagueHint"></p>
+        </div>
+
         <p class="hint" id="aquariumHint">Tipp: Für Smartboard oder Beamer den Vollbild-Modus nutzen.</p>
         <p class="error" id="aquariumError" role="alert"></p>
 
@@ -538,7 +560,7 @@
           <div class="field-group">
             <label class="field-label" for="aquariumThreshold">Lautstärke-Grenze</label>
             <input type="range" id="aquariumThreshold" class="aquarium-range" min="10" max="95" value="65">
-            <p class="hint">Links = streng, rechts = großzügig. Die Marke in der Lautstärke-Anzeige zeigt die Grenze.</p>
+            <p class="hint">Die Liga stellt die Grenze ein. Wer den Regler selbst bewegt, wechselt in den freien Modus (keine Pokale). Die Marke in der Lautstärke-Anzeige zeigt die Grenze.</p>
           </div>
           <div class="field-group">
             <label class="field-label" for="aquariumFishCount">Anzahl Fische</label>
@@ -560,6 +582,11 @@
         <section class="aquarium-log" id="aquariumLog">
           <h3 class="aquarium-log-title">🏆 Trophäenschrank</h3>
           <p class="hint" id="aquariumLogHint"></p>
+          <div class="league-tabs" role="group" aria-label="Trophäenschrank einer Liga anzeigen">
+            <button type="button" class="league-tab is-active" data-shelf="rookie" aria-pressed="true">🐣 Neuling <span class="league-tab-count">0/9</span></button>
+            <button type="button" class="league-tab" data-shelf="allround" aria-pressed="false">🐬 Allrounder <span class="league-tab-count">0/9</span></button>
+            <button type="button" class="league-tab" data-shelf="champ" aria-pressed="false">👑 Champion <span class="league-tab-count">0/9</span></button>
+          </div>
           <ul class="trophy-shelf" id="aquariumTrophies"></ul>
 
           <div class="aquarium-log-head">

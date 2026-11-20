@@ -24,11 +24,11 @@ export const WORLD_H = 900;
 const SAND_H = 120;
 const SURFACE_Y = 44;
 const GRACE_SECONDS = 1.2;
-const CALM_ABORT_SECONDS = 1.2;
+const CALM_ABORT_SECONDS = 1.0;
 const HATCH_AFTER_QUIET_SECONDS = 20;
 const COMEBACK_SECONDS = 180;   // so lange Ruhe nach einem gefressenen Fisch = Comeback
 const SHARK_LENGTH = 460;
-const SHARK_SPEED = 400;        // Anflug: langsam genug, dass die Klasse noch reagieren kann
+const SHARK_SPEED = 320;        // Anflug: langsam genug, dass die Klasse noch reagieren kann
 const SHARK_LUNGE_SPEED = 820;  // Endspurt kurz vor dem Fisch
 const SHARK_LUNGE_DISTANCE = 260;
 const FISH_HUES = [8, 28, 48, 165, 200, 265, 320, 345];
@@ -177,7 +177,8 @@ export function createTank() {
     if (tank.fish.length === 0) return;
     s.forced = tank.pendingHunt;   // per Knopf gerufen: kein Abbruch bei Stille
     s.target = tank.fish[Math.floor(Math.random() * tank.fish.length)];
-    s.dir = Math.random() < 0.5 ? 1 : -1;
+    // Der Hai startet immer auf der Seite, die vom Ziel weiter weg liegt: so bleibt Zeit zum Retten
+    s.dir = s.target.x < WORLD_W / 2 ? -1 : 1;
     s.x = s.dir > 0 ? -SHARK_LENGTH * 0.4 : WORLD_W + SHARK_LENGTH * 0.4;
     s.y = clamp(s.target.y, 120, WORLD_H - SAND_H - 80);
     s.mouth = 0.1;
