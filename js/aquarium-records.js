@@ -157,7 +157,7 @@ export const TROPHIES = [
   // Reihe 1: Ruhe
   {
     id: 'quiet', icon: '🏆', title: 'Ruhe-Meister',
-    tiers: [120, 300, 600],
+    tiers: [120, 300, 900],
     value: r => r.bestQuiet || 0,
     show: v => (v > 0 ? 'Rekord: ' + formatDuration(v) : 'Noch keine Serie'),
     step: secondsStep,
@@ -211,7 +211,7 @@ export const TROPHIES = [
     value: r => r.fishTier || 0,
     show: (v, r) => (r.mostFish ? 'Bester Teich: ' + r.mostFish.alive + ' von ' + r.mostFish.max : 'Noch kein Rekord'),
     nextText: v => FISH_TIER_RULES[v].text,
-    detail: 'Fische retten (ein Fisch pro Schüler)'
+    detail: 'Fische retten (ein Fisch pro Schüler), gilt ab 4 Fischen im Becken'
   },
   {
     id: 'pond', icon: '🐟', title: 'Voller Teich',
@@ -239,6 +239,15 @@ export function trophyTiers(records) {
   const out = {};
   TROPHIES.forEach(t => { out[t.id] = tierOf(t.value(r), t.tiers); });
   return out;
+}
+
+// Bedingungen der drei Stufen als Text (für die Pokal-Erklärung)
+export function trophyLevels(trophy) {
+  return trophy.tiers.map((v, i) => {
+    if (trophy.nextText) return trophy.nextText(i);
+    const amount = trophy.step(v);
+    return TIER_NAMES[i + 1] + ': ' + amount + (trophy.step === secondsStep ? ' Min.' : '');
+  });
 }
 
 export function goldCount(records) {

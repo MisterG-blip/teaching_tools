@@ -16,7 +16,7 @@
 //   - Bei anhaltender Ruhe schlüpft nach einer Weile ein neuer Fisch.
 // ============================================================================
 
-import { drawSpecial, SPECIES, TIER_SCALE } from './aquarium-fish.js';
+import { drawSpecialLeague, SPECIES, TIER_SCALE } from './aquarium-fish.js';
 
 export const WORLD_W = 1600;
 export const WORLD_H = 900;
@@ -50,6 +50,8 @@ export function createTank() {
   const tank = {
     fish: [],
     specials: [],      // besondere Fische aus Pokalen: zählen nicht, der Hai ignoriert sie
+    showSpecials: true,  // Bonus-Fische im Becken? (aus = sie schwimmen hinaus)
+    showcase: false,     // Schau-Modus: nur Bonus-Fische, kein Hai, keine normalen Fische
     maxFish: 8,
     respawn: true,
     tension: 0,        // 0 = entspannt, 1 = kurz vor "zu laut" (für Wasserfarbe und Hai-Flosse)
@@ -102,7 +104,8 @@ export function createTank() {
       spawnT: spawnEffect ? 0 : 1
     };
     f.ty = f.y;
-    if (spawnEffect) sparkle(f.x, f.y);
+    if (tank.showcase) f.away = true;   // normale Fische fehlen im Schau-Modus
+    else if (spawnEffect) sparkle(f.x, f.y);
     return f;
   }
 
@@ -137,7 +140,25 @@ export function createTank() {
 
   // Manuell: Hai ruft man auch ohne Mikrofon (z. B. zum Vorführen)
   tank.callShark = function callShark() {
-    if (tank.shark.state === 'away' && tank.fish.length > 0) tank.pendingHunt = true;
+    if (!tank.showcase && tank.shark.state === 'away' && tank.fish.length > 0) tank.pendingHunt = true;
+  };
+
+  // Ist dieser Fisch gerade erwünscht? Bonus-Fische: Schalter oder Schau-Modus. Normale: nicht im Schau-Modus.
+  function wanted(f) {
+    return f.special ? (tank.showSpecials || tank.showcase) : !tank.showcase;
+  }
+
+  tank.setShowSpecials = function setShowSpecials(on) { tank.showSpecials = !!on; };
+
+  tank.setShowcase = function setShowcase(on) {
+    tank.showcase = !!on;
+    if (tank.showcase) {
+      // Der Hai verschwindet sofort, normale Fische schwimmen hinaus
+      const s = tank.shark;
+      s.state = 'away'; s.target = null; s.x = -SHARK_LENGTH; s.mouth = 0; s.mouthHold = 0;
+      tank.pendingHunt = false;
+      tank.loudT = 0; tank.tension = 0;
+    }
   };
 
   // Feier-Effekt (neuer Pokal / Rekord): Funken regnen durchs Becken
@@ -156,13 +177,19 @@ export function createTank() {
    * silent=true: ohne Funkeneffekt (z. B. beim Laden einer Gruppe).
    */
   tank.setSpecials = function setSpecials(list, silent) {
-    const wanted = new Map(list.map(e => [e.id, e.tier]));
-    tank.specials = tank.specials.filter(f => wanted.has(f.id));
-    tank.specials.forEach(f => { f.tier = wanted.get(f.id); });
+    // Ein Fisch pro Pokal UND Liga: Schlüssel "pokal:liga"
+    const keyOf = e => e.id + ':' + (e.league || '');
+    const wanted = new Map(list.map(e => [keyOf(e), e.tier]));
+    tank.specials = tank.specials.filter(f => wanted.has(f.key));
+    tank.specials.forEach(f => { f.tier = wanted.get(f.key); });
     list.forEach(e => {
-      if (!SPECIES[e.id] || tank.specials.some(f => f.id === e.id)) return;
-      const f = makeFish(!silent);
+      if (!SPECIES[e.id] || tank.specials.some(f => f.key === keyOf(e))) return;
+      const visible = tank.showSpecials || tank.showcase;
+      const f = makeFish(!silent && visible);
       f.special = true;
+      f.away = !visible;
+      f.key = keyOf(e);
+      f.league = e.league || null;
       f.id = e.id;
       f.tier = e.tier;
       f.size = SPECIES[e.id].size;
@@ -290,7 +317,7 @@ export function createTank() {
     }
 
     // Neuer Fisch bei langer Ruhe
-    if (tank.respawn && tank.fish.length < tank.maxFish && tank.quietT >= HATCH_AFTER_QUIET_SECONDS) {
+    if (!tank.showcase && tank.respawn && tank.fish.length < tank.maxFish && tank.quietT >= HATCH_AFTER_QUIET_SECONDS) {
       tank.fish.push(makeFish(true));
       tank.quietT = 0;
       // Voller Teich: nach einem Verlust sind wieder alle Fische da
@@ -303,7 +330,7 @@ export function createTank() {
 
     // Hai losschicken
     const shark = tank.shark;
-    if (shark.state === 'away' && tank.fish.length > 0 && tank.cooldown <= 0) {
+    if (!tank.showcase && shark.state === 'away' && tank.fish.length > 0 && tank.cooldown <= 0) {
       if (tank.pendingHunt || tank.loudT >= GRACE_SECONDS) startHunt();
     }
     updateShark(dt);
@@ -311,10 +338,28 @@ export function createTank() {
     // Fische
     const hunting = shark.state === 'hunt';
     tank.fish.concat(tank.specials).forEach(f => {
+      // Rein- und Rausschwimmen (Bonus-Schalter, Schau-Modus)
+      const show = wanted(f);
+      if (f.away) {
+        if (!show) return;                       // unsichtbar, ruht
+        const fromLeft = Math.random() < 0.5;    // hereinschwimmen
+        f.away = false; f.entering = true; f.leaving = false;
+        f.x = fromLeft ? -90 : WORLD_W + 90;
+        f.dir = fromLeft ? 1 : -1;
+        f.spawnT = 1; f.panic = 0;
+      } else if (!show && !f.leaving) {
+        f.leaving = true; f.entering = false;
+        f.dir = f.x < WORLD_W / 2 ? -1 : 1;      // zur nächsten Seite hinaus
+      } else if (show && f.leaving) {
+        f.leaving = false;
+        if (f.x < 90 || f.x > WORLD_W - 90) { f.entering = true; f.dir = f.x < 90 ? 1 : -1; }
+      }
+      const moving = f.leaving || f.entering;
+
       f.spawnT = Math.min(1, f.spawnT + dt * 1.6);
 
       let panicTarget = 0;
-      if (hunting) {
+      if (hunting && !moving) {
         const d = Math.hypot(f.x - shark.x, f.y - shark.y);
         if (d < 480) panicTarget = 1;
         if (panicTarget) {
@@ -325,7 +370,7 @@ export function createTank() {
       f.panic = approach(f.panic, panicTarget, dt * 4);
 
       f.turnT -= dt;
-      if (f.turnT <= 0 && !f.panic) {
+      if (f.turnT <= 0 && !f.panic && !moving) {
         f.turnT = rand(2.5, 7);
         f.ty = rand(110, WORLD_H - SAND_H - 80);
         if (Math.random() < 0.3) f.dir *= -1;
@@ -333,9 +378,15 @@ export function createTank() {
       }
       // Der Kugelfisch flüchtet kaum, er bläht sich stattdessen auf
       const speed = f.baseSpeed * (1 + f.panic * (f.id === 'sharkfree' ? 0.2 : 2.2));
-      f.x += f.dir * speed * dt;
-      if (f.x < 90) { f.x = 90; f.dir = 1; }
-      if (f.x > WORLD_W - 90) { f.x = WORLD_W - 90; f.dir = -1; }
+      f.x += f.dir * (f.leaving ? Math.max(speed, 170) : speed) * dt;
+      if (f.leaving) {
+        if (f.x < -100 || f.x > WORLD_W + 100) { f.away = true; f.leaving = false; return; }
+      } else if (f.entering) {
+        if (f.x >= 100 && f.x <= WORLD_W - 100) f.entering = false;
+      } else {
+        if (f.x < 90) { f.x = 90; f.dir = 1; }
+        if (f.x > WORLD_W - 90) { f.x = WORLD_W - 90; f.dir = -1; }
+      }
 
       const prevY = f.y;
       f.y += (f.ty - f.y) * Math.min(1, dt * (0.8 + f.panic * 2));
@@ -396,9 +447,9 @@ export function createTank() {
     drawFrontPlants(ctx, tank);
     drawLurkFin(ctx, tank);
     tank.bubbles.forEach(b => drawBubble(ctx, b.x, b.y, b.r, 0.55));
-    tank.fish.forEach(f => drawFish(ctx, f, tank.time));
-    tank.specials.forEach(f => drawSpecialFish(ctx, f, tank.time));
-    if (tank.shark.state !== 'away') drawShark(ctx, tank.shark, tank.time);
+    tank.fish.forEach(f => { if (!f.away) drawFish(ctx, f, tank.time); });
+    tank.specials.forEach(f => { if (!f.away) drawSpecialFish(ctx, f, tank.time); });
+    if (!tank.showcase && tank.shark.state !== 'away') drawShark(ctx, tank.shark, tank.time);
     tank.particles.forEach(p => drawParticle(ctx, p));
     drawSurface(ctx, tank);
     tank.texts.forEach(t => drawText(ctx, t));
@@ -625,9 +676,7 @@ function drawSpecialFish(ctx, f, t) {
   const tilt = clamp((f.vy / (f.baseSpeed + 40)) * 0.6, -0.4, 0.4);
   ctx.save();
   ctx.translate(f.x, f.y + Math.sin(t * 2 + f.phase) * 1.5);
-  ctx.scale(f.dir, 1);
-  ctx.rotate(tilt);
-  drawSpecial(ctx, f.id, s, { phase: f.phase, panic: f.panic, t });
+  drawSpecialLeague(ctx, f.id, s, { phase: f.phase, panic: f.panic, t }, f.league, f.dir, tilt);
   ctx.restore();
 }
 

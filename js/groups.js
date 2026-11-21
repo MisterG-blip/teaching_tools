@@ -204,6 +204,25 @@ function renameGroup(id) {
   set(ref(db, 'groups/' + id + '/name'), name.trim());
 }
 
+// Löscht eine Gruppe samt Beitritts-Code. Die Reihenfolge ist wichtig: Die Firebase-Regel
+// erlaubt das Löschen des Codes nur, solange die Gruppe (mit dir als Mitglied) noch existiert.
+// Bliebe der Code übrig, könnte jemand mit dem alten Code eine leere Geister-Gruppe neu anlegen.
+// Alle Gruppendaten (Namen, Sitzplan, Dienste, Aquarium-Pokale und -Sitzungen) hängen unter
+// groups/{id} und verschwinden mit dem Löschen.
+async function deleteGroupCompletely(id, uid, joinCode) {
+  if (joinCode) {
+    try { await remove(ref(db, 'groupCodes/' + joinCode)); }
+    catch (err) { console.error('Beitritts-Code konnte nicht gelöscht werden', err); }
+  }
+  try {
+    await remove(ref(db, 'groups/' + id));
+    await remove(ref(db, 'userGroups/' + uid + '/' + id));
+  } catch (err) {
+    console.error('Gruppe konnte nicht gelöscht werden', err);
+    alert('Die Gruppe konnte nicht vollständig gelöscht werden. Bitte später erneut versuchen.');
+  }
+}
+
 function deleteOrLeaveGroup(id, isOwner) {
   const user = auth && auth.currentUser;
   if (!user) return;
@@ -212,9 +231,7 @@ function deleteOrLeaveGroup(id, isOwner) {
 
   if (isOwner) {
     if (!confirm('Gruppe "' + label + '" für ALLE Mitglieder löschen? Das kann nicht rückgängig gemacht werden.')) return;
-    remove(ref(db, 'groups/' + id));
-    remove(ref(db, 'userGroups/' + user.uid + '/' + id));
-    if (current && current.joinCode) remove(ref(db, 'groupCodes/' + current.joinCode));
+    deleteGroupCompletely(id, user.uid, current && current.joinCode);
   } else {
     if (!confirm('Gruppe "' + label + '" verlassen? Du verlierst den Zugriff, andere Mitglieder behalten ihn.')) return;
     remove(ref(db, 'groups/' + id + '/members/' + user.uid));
@@ -322,11 +339,13 @@ async function joinGroupByCode() {
     if (!snap.exists()) {
       joinMessage.textContent = 'Code nicht gefunden. Bitte prüfen.';
       joinGroupBtn.disabled = false;
+      remove(ref(db, 'pendingJoinCode/' + user.uid)).catch(() => {});
       return;
     }
     const groupId = snap.val().groupId;
     await set(ref(db, 'groups/' + groupId + '/members/' + user.uid), { email: user.email || '', displayName: userDisplayName || '', joinedAt: Date.now() });
     await set(ref(db, 'userGroups/' + user.uid + '/' + groupId), true);
+    remove(ref(db, 'pendingJoinCode/' + user.uid)).catch(() => {});   // wird nicht mehr gebraucht
     joinCodeInput.value = '';
     joinMessage.textContent = 'Beigetreten!';
     setTimeout(() => { joinMessage.textContent = ''; }, 2500);

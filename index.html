@@ -531,6 +531,8 @@
           <button type="button" class="btn btn-ghost" id="aquariumCalibrateBtn" disabled>Kalibrieren</button>
           <button type="button" class="btn btn-ghost" id="aquariumSharkBtn">🦈 Hai rufen</button>
           <button type="button" class="btn btn-ghost" id="aquariumResetBtn">Neu starten</button>
+          <button type="button" class="btn btn-ghost" id="aquariumBonusBtn" aria-pressed="true">🏅 Bonus-Fische: an</button>
+          <button type="button" class="btn btn-ghost" id="aquariumShowcaseBtn" aria-pressed="false">🏆 Schau-Modus</button>
           <button type="button" class="btn btn-ghost" id="aquariumFullscreenBtn">⛶ Vollbild</button>
         </div>
 
@@ -588,6 +590,11 @@
             <button type="button" class="league-tab" data-shelf="champ" aria-pressed="false">👑 Champion <span class="league-tab-count">0/9</span></button>
           </div>
           <ul class="trophy-shelf" id="aquariumTrophies"></ul>
+
+          <details class="trophy-rules">
+            <summary>ℹ️ So werden Pokale freigespielt</summary>
+            <div id="aquariumTrophyRulesBody"></div>
+          </details>
 
           <div class="aquarium-log-head">
             <h3 class="aquarium-log-title">📜 Aufzeichnung</h3>

@@ -496,11 +496,76 @@ export function drawSpecial(ctx, id, s, o) {
   else if (SPEC[id]) bodyFish(ctx, s, opts, SPEC[id]);
 }
 
+// ---------- Liga-Look ----------
+// Jede Liga färbt ihre Bonus-Fische anders ein (Farbton-Filter über den Fisch).
+// Neuling = Originalfarben. Weiß, Schwarz und Grau bleiben, nur die bunten Teile ändern sich.
+export const LEAGUE_LOOKS = {
+  rookie:   null,
+  allround: { color: 'hsl(140, 80%, 50%)', label: 'grün' },
+  champ:    { color: 'hsl(295, 80%, 55%)', label: 'violett' }
+};
+
+let fx = null;   // zwei wiederverwendete Hilfs-Leinwände für den Filter
+
+function fxCanvases(px) {
+  if (!fx || fx.size < px) {
+    const mk = () => { const c = document.createElement('canvas'); c.width = c.height = px; return c; };
+    fx = { size: px, a: mk(), b: mk() };
+  }
+  return fx;
+}
+
+/**
+ * Zeichnet einen Bonus-Fisch im Look einer Liga um den aktuellen Ursprung.
+ * flip = -1/1 (Blickrichtung), tilt = Neigung in Radiant.
+ * Ohne Look (Neuling) wird einfach normal gezeichnet.
+ */
+export function drawSpecialLeague(ctx, id, s, o, league, flip = 1, tilt = 0) {
+  const look = LEAGUE_LOOKS[league];
+  ctx.save();
+  if (!look) {
+    ctx.scale(flip, 1);
+    ctx.rotate(tilt);
+    drawSpecial(ctx, id, s, o);
+    ctx.restore();
+    return;
+  }
+  const k = (ctx.getTransform && ctx.getTransform().a) || 1;   // Welt -> Pixel
+  const px = Math.max(16, Math.ceil(s * 6 * k));
+  const { a, b } = fxCanvases(px);
+  const A = a.getContext('2d');
+  const B = b.getContext('2d');
+  const full = fx.size;
+
+  A.setTransform(1, 0, 0, 1, 0, 0);
+  A.globalCompositeOperation = 'source-over';
+  A.clearRect(0, 0, full, full);
+  A.setTransform(k, 0, 0, k, px / 2, px / 2);
+  A.scale(flip, 1);
+  A.rotate(tilt);
+  drawSpecial(A, id, s, o);
+
+  // Kopie als Umriss, dann Farbton darüber, dann auf den Umriss zuschneiden
+  B.setTransform(1, 0, 0, 1, 0, 0);
+  B.clearRect(0, 0, full, full);
+  B.drawImage(a, 0, 0);
+  A.setTransform(1, 0, 0, 1, 0, 0);
+  A.globalCompositeOperation = 'hue';
+  A.fillStyle = look.color;
+  A.fillRect(0, 0, px, px);
+  A.globalCompositeOperation = 'destination-in';
+  A.drawImage(b, 0, 0);
+  A.globalCompositeOperation = 'source-over';
+
+  ctx.drawImage(a, 0, 0, px, px, -px / (2 * k), -px / (2 * k), px / k, px / k);
+  ctx.restore();
+}
+
 /**
  * Kleine Vorschau für den Trophäenschrank.
  * unlocked=false zeichnet eine graue Silhouette.
  */
-export function drawSpeciesPreview(canvas, id, tier, unlocked) {
+export function drawSpeciesPreview(canvas, id, tier, unlocked, league) {
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const W = 120, H = 70;
   canvas.width = W * dpr;
@@ -515,7 +580,7 @@ export function drawSpeciesPreview(canvas, id, tier, unlocked) {
 
   ctx.save();
   ctx.translate(W / 2 + 4, H / 2);
-  drawSpecial(ctx, id, s, { phase: 0.6, panic: 0, t: 1 });
+  drawSpecialLeague(ctx, id, s, { phase: 0.6, panic: 0, t: 1 }, unlocked ? league : null);
   ctx.restore();
 
   if (!unlocked) {

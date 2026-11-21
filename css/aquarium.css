@@ -26,6 +26,7 @@
 
 /* ---------- Anzeige im Becken ---------- */
 
+
 .aquarium-hud {
   position: absolute;
   top: 10px;
@@ -49,7 +50,10 @@
   white-space: nowrap;
 }
 .aquarium-status {
-  white-space: normal;
+  /* Immer eine Zeile (Höhe bleibt gleich, nichts rutscht) */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   text-align: center;
   transition: background 0.25s ease, color 0.25s ease;
 }
@@ -172,10 +176,9 @@
 
 @media (max-width: 760px) {
   /* Kleine Bildschirme: Infoleiste im Becken klein halten, damit die Fische sichtbar bleiben */
-  .aquarium-hud { top: 6px; left: 6px; right: 6px; flex-wrap: nowrap; gap: 6px; }
+  .aquarium-hud { top: 6px; left: 6px; right: 6px; gap: 4px 6px; }
   .aquarium-pill { font-size: 0.66rem; padding: 3px 8px; }
-  .aquarium-status { flex: 1 1 auto; min-width: 0; line-height: 1.2; }
-  #aquariumBest { display: none; }  /* steht auch im Trophäenschrank */
+  .aquarium-status { line-height: 1.2; }
   .aquarium-meter { left: 8px; right: 8px; bottom: 8px; }
   .aquarium-meter-label { display: none; }
   .aquarium-toast { font-size: 0.8rem; padding: 8px 12px; bottom: 34px; }
@@ -493,3 +496,53 @@
 }
 
 .aquarium-league > .field-label { display: block; font-weight: 700; }
+
+/* ============================================================================
+   Anzeige oben im Becken: ruhiges, fest vorgegebenes Layout
+   Ob eine oder zwei Zeilen, hängt NUR von der Breite des Beckens ab, nie vom
+   Inhalt. So springt beim Spielen nichts hin und her.
+   - schmal: Zeile 1 = Fische, Liga, Status; Zeile 2 = Ruhe-Serie rechtsbündig
+   - breit:  alles in einer Zeile, Ruhe-Serie ganz rechts
+   ============================================================================ */
+
+.aquarium-frame { container-type: inline-size; }
+.aquarium-hud {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px 8px;
+  align-items: start;
+}
+.aquarium-hud > #aquariumBest {
+  grid-column: 1 / -1;
+  justify-self: end;
+  min-width: 15ch;                    /* wächst nicht jede Sekunde mit */
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+@container (min-width: 46rem) {
+  .aquarium-hud { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .aquarium-hud > #aquariumBest { grid-column: auto; }
+}
+/* Vollbild: größere Schrift, deshalb erst später einzeilig */
+@container (max-width: 69.99rem) {
+  .aquarium-stage:fullscreen .aquarium-hud { grid-template-columns: auto minmax(0, 1fr); }
+  .aquarium-stage:fullscreen .aquarium-hud > #aquariumBest { grid-column: 1 / -1; }
+}
+@container (max-width: 69.99rem) {
+  .aquarium-stage:-webkit-full-screen .aquarium-hud { grid-template-columns: auto minmax(0, 1fr); }
+  .aquarium-stage:-webkit-full-screen .aquarium-hud > #aquariumBest { grid-column: 1 / -1; }
+}
+
+/* ---------- Erklärung der Pokale ---------- */
+.trophy-rules { margin-top: 14px; border: 2px solid var(--card-border); border-radius: 14px; background: #fbfaf5; }
+.trophy-rules > summary { cursor: pointer; padding: 12px 16px; font-weight: 700; color: var(--ink); }
+.trophy-rules[open] > summary { border-bottom: 1.5px solid var(--card-border); }
+#aquariumTrophyRulesBody { padding: 12px 16px 16px; }
+.trophy-rules-intro { margin: 0 0 14px; padding-left: 20px; font-size: 0.85rem; color: var(--ink-soft); }
+.trophy-rules-intro li { margin: 4px 0; }
+.trophy-rules-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.trophy-rule { padding: 10px 12px; background: #fff; border: 1.5px solid var(--card-border); border-radius: 10px; }
+.trophy-rule-title { margin: 0; font-weight: 700; font-size: 0.9rem; color: var(--ink); }
+.trophy-rule-hint { margin: 2px 0 6px; font-size: 0.78rem; color: var(--ink-soft); }
+.trophy-rule-levels { margin: 0; padding-left: 18px; font-size: 0.8rem; color: var(--ink); }
+

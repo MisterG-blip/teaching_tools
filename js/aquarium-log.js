@@ -7,10 +7,10 @@
 
 import {
   trophyStates, sessionList, parseList, formatDuration, LEAGUES, LEAGUE_IDS, FREE_LEAGUE,
-  recordsFor, goldCount, isPlatin, TROPHIES
+  recordsFor, goldCount, isPlatin, TROPHIES, trophyLevels, FISH_TIER_MIN_POND, MIN_SESSION_SECONDS
 } from './aquarium-records.js';
-import { aquariumTrophies, aquariumSessions, aquariumShelfTabs } from './dom.js';
-import { SPECIES, drawSpeciesPreview } from './aquarium-fish.js';
+import { aquariumTrophies, aquariumTrophyRulesBody, aquariumSessions, aquariumShelfTabs } from './dom.js';
+import { SPECIES, LEAGUE_LOOKS, drawSpeciesPreview } from './aquarium-fish.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const TIER_NUMBER = { locked: 0, bronze: 1, silver: 2, gold: 3, platin: 3 };
@@ -36,7 +36,7 @@ function svgEl(tag, attrs) {
 
 // ---------- Trophäenschrank ----------
 
-export function renderTrophies(records) {
+export function renderTrophies(records, league) {
   aquariumTrophies.innerHTML = '';
   trophyStates(records).forEach(t => {
     const li = el('li', 'trophy-card' + (t.wide ? ' is-wide' : ''));
@@ -50,7 +50,7 @@ export function renderTrophies(records) {
       const fish = el('canvas', 'trophy-fish');
       fish.setAttribute('role', 'img');
       fish.setAttribute('aria-label', unlocked ? species.name + ' (freigeschaltet)' : species.name + ' (noch gesperrt)');
-      drawSpeciesPreview(fish, t.id, TIER_NUMBER[t.tier] || 0, unlocked);
+      drawSpeciesPreview(fish, t.id, TIER_NUMBER[t.tier] || 0, unlocked, league);
       li.appendChild(fish);
     }
 
@@ -64,6 +64,36 @@ export function renderTrophies(records) {
     }
     aquariumTrophies.appendChild(li);
   });
+}
+
+// ---------- Erklärung: wie bekommt man welchen Pokal? ----------
+// Wird einmal aus den Pokal-Definitionen gebaut, bleibt also immer aktuell.
+
+function renderTrophyRules() {
+  const body = aquariumTrophyRulesBody;
+  if (!body || body.childElementCount > 0) return;
+
+  const intro = el('ul', 'trophy-rules-intro');
+  [
+    'Jede Liga (Neuling, Allrounder, Champion) hat ihre eigenen Pokale und zählt für sich. Im freien Modus gibt es keine Pokale.',
+    'Eine Sitzung ist die Zeit, in der das Mikrofon an ist. Ab ' + Math.round(MIN_SESSION_SECONDS / 60) + ' Min. wird sie aufgezeichnet.',
+    'Jeder Pokal hat drei Stufen: Bronze, Silber und Gold. Ab Bronze schwimmt der zugehörige Bonus-Fisch im Aquarium mit. Jede Liga hat ihre eigene Farbe: Neuling in Originalfarben, Allrounder ' + LEAGUE_LOOKS.allround.label + ', Champion ' + LEAGUE_LOOKS.champ.label + '.',
+    'Den Aquarium-Legende-Pokal (Platin) gibt es, wenn alle ' + TROPHIES.length + ' Pokale einer Liga auf Gold stehen.',
+    'Die Fischfreunde zählen erst ab ' + FISH_TIER_MIN_POND + ' Fischen im Becken.'
+  ].forEach(text => intro.appendChild(el('li', '', text)));
+  body.appendChild(intro);
+
+  const list = el('div', 'trophy-rules-list');
+  TROPHIES.forEach(t => {
+    const card = el('div', 'trophy-rule');
+    card.appendChild(el('p', 'trophy-rule-title', t.icon + ' ' + t.title + (SPECIES[t.id] ? '  ·  Bonus-Fisch: ' + SPECIES[t.id].name : '')));
+    card.appendChild(el('p', 'trophy-rule-hint', t.detail));
+    const levels = el('ul', 'trophy-rule-levels');
+    trophyLevels(t).forEach(text => levels.appendChild(el('li', '', text)));
+    card.appendChild(levels);
+    list.appendChild(card);
+  });
+  body.appendChild(list);
 }
 
 // ---------- Sitzungsprotokoll ----------
@@ -164,7 +194,8 @@ function renderTabs(aquarium, shelfLeague) {
 }
 
 export function renderLog(aquarium, shelfLeague = 'rookie') {
+  renderTrophyRules();
   renderTabs(aquarium, shelfLeague);
-  renderTrophies(recordsFor(aquarium, shelfLeague));
+  renderTrophies(recordsFor(aquarium, shelfLeague), shelfLeague);
   renderSessions(aquarium);
 }

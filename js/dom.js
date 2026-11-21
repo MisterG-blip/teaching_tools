@@ -97,6 +97,8 @@ export const aquariumMicBtn = document.getElementById('aquariumMicBtn');
 export const aquariumCalibrateBtn = document.getElementById('aquariumCalibrateBtn');
 export const aquariumSharkBtn = document.getElementById('aquariumSharkBtn');
 export const aquariumResetBtn = document.getElementById('aquariumResetBtn');
+export const aquariumBonusBtn = document.getElementById('aquariumBonusBtn');
+export const aquariumShowcaseBtn = document.getElementById('aquariumShowcaseBtn');
 export const aquariumFullscreenBtn = document.getElementById('aquariumFullscreenBtn');
 export const aquariumHint = document.getElementById('aquariumHint');
 export const aquariumError = document.getElementById('aquariumError');
@@ -107,6 +109,7 @@ export const aquariumLeagueBtns = Array.from(document.querySelectorAll('.league-
 export const aquariumShelfTabs = Array.from(document.querySelectorAll('.league-tab'));
 export const aquariumLogHint = document.getElementById('aquariumLogHint');
 export const aquariumTrophies = document.getElementById('aquariumTrophies');
+export const aquariumTrophyRulesBody = document.getElementById('aquariumTrophyRulesBody');
 export const aquariumSessions = document.getElementById('aquariumSessions');
 export const aquariumClearLogBtn = document.getElementById('aquariumClearLogBtn');
 

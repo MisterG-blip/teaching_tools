@@ -136,8 +136,11 @@ async function deleteAccount() {
       const g = groups[id];
       const memberCount = g.members ? Object.keys(g.members).length : 1;
       if (memberCount <= 1) {
+        // Erst den Code (Regel prüft die noch vorhandene Gruppe), dann die Gruppe
+        if (g.joinCode) {
+          try { await remove(ref(db, 'groupCodes/' + g.joinCode)); } catch (e) { console.error(e); }
+        }
         await remove(ref(db, 'groups/' + id));
-        await remove(ref(db, 'groupCodes/' + (g.joinCode || '')));
       } else {
         await remove(ref(db, 'groups/' + id + '/members/' + user.uid));
       }
